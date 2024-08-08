@@ -1,7 +1,9 @@
 /* eslint-disable import/no-unused-modules */
+import { createWriteStream, PathLike } from 'node:fs';
+import { WritableStream } from 'node:stream/web';
 import { Cheerio, CheerioAPI, load as cheerioLoad, Element } from 'cheerio';
 
-export interface IUser {
+export interface IUserPreview {
     id: string;
     name: string;
 }
@@ -10,7 +12,7 @@ export interface ISubmissionPreview {
     id: string;
     thumbnail: URL;
     title: string;
-    uploader: IUser;
+    uploader: IUserPreview;
 }
 
 export interface ISubmission extends ISubmissionPreview {
@@ -41,10 +43,7 @@ export class FASystemError extends Error {
     }
 }
 
-type PaginatedFetchFunction<Entry, ReqOptions> = (
-    param: ReqOptions,
-    page: number,
-) => Promise<IPaginatedResponse<Entry[]>>;
+type PaginatedFetchFunction<Entry, ReqArg> = (param: ReqArg, page: number) => Promise<IPaginatedResponse<Entry[]>>;
 
 export class FurAffinityAPI {
     private static readonly USER_ID_REGEX = /\/user\/([^/]+)(\/|$)/;
@@ -57,8 +56,11 @@ export class FurAffinityAPI {
         private readonly cookieB = '',
     ) {}
 
-    private static async autoPaginate<X, Y>(func: PaginatedFetchFunction<X, Y>, req: Y): Promise<X[]> {
-        const result: X[] = [];
+    private static async autoPaginate<Entry, ReqArg>(
+        func: PaginatedFetchFunction<Entry, ReqArg>,
+        req: ReqArg,
+    ): Promise<Entry[]> {
+        const result: Entry[] = [];
         let page: number | undefined = 1;
         while (page) {
             // eslint-disable-next-line no-await-in-loop
@@ -71,16 +73,16 @@ export class FurAffinityAPI {
     }
 
     private static checkSystemError($: CheerioAPI): void {
-        const title = $('title').text();
-        if (title === 'System Error') {
-            throw new FASystemError($('div.section-body').text());
+        const titleLower = $('title').text().trim().toLowerCase();
+        if (titleLower === 'system error') {
+            throw new FASystemError($('div.section-body').text().trim());
         }
     }
 
-    private static parseUserAnchor(elem: Cheerio<Element>): IUser {
+    private static parseUserAnchor(elem: Cheerio<Element>): IUserPreview {
         return {
             id: FurAffinityAPI.USER_ID_REGEX.exec(elem.attr('href') ?? '')?.[1] ?? '',
-            name: elem.text(),
+            name: elem.text().trim(),
         };
     }
 
@@ -89,7 +91,7 @@ export class FurAffinityAPI {
         return {
             id: FurAffinityAPI.SUBMISSION_ID_REGEX.exec(elem.find('a').attr('href') ?? '')?.[1] ?? '',
             thumbnail: new URL(elem.find('img').attr('src') ?? '', reqUrl),
-            title: figCaption.find('p:first').text(),
+            title: figCaption.find('p:first').text().trim(),
             uploader: FurAffinityAPI.parseUserAnchor(figCaption.find('p:last a')),
         };
     }
@@ -127,13 +129,113 @@ export class FurAffinityAPI {
         };
     }
 
-    public async watchingListPage(userID: string, page = 1): Promise<IPaginatedResponse<IUser[]>> {
+    public async getWatchingPage(userID: string, page = 1): Promise<IPaginatedResponse<IUserPreview[]>> {
+        return this.rawWatchListParse(userID, 'by', page);
+    }
+
+    public async getWatchedByPage(userID: string, page = 1): Promise<IPaginatedResponse<IUserPreview[]>> {
+        return this.rawWatchListParse(userID, 'to', page);
+    }
+
+    public async galleryPage(userID: string, page = 1): Promise<IPaginatedResponse<ISubmissionPreview[]>> {
+        return this.rawGalleryParse(userID, 'gallery', page);
+    }
+
+    public async getScrapsPage(userID: string, page = 1): Promise<IPaginatedResponse<ISubmissionPreview[]>> {
+        return this.rawGalleryParse(userID, 'scraps', page);
+    }
+
+    public async getWatching(userID: string): Promise<IUserPreview[]> {
+        return FurAffinityAPI.autoPaginate(this.getWatchingPage.bind(this), userID);
+    }
+
+    public async getWatchedBy(userID: string): Promise<IUserPreview[]> {
+        return FurAffinityAPI.autoPaginate(this.getWatchedByPage.bind(this), userID);
+    }
+
+    public async getGallery(userID: string): Promise<ISubmissionPreview[]> {
+        return FurAffinityAPI.autoPaginate(this.galleryPage.bind(this), userID);
+    }
+
+    public async getScraps(userID: string): Promise<ISubmissionPreview[]> {
+        return FurAffinityAPI.autoPaginate(this.getScrapsPage.bind(this), userID);
+    }
+
+    public async getSubmission(submissionID: ISubmissionPreview | string): Promise<ISubmission> {
+        if (submissionID instanceof Object) {
+            submissionID = submissionID.id;
+        }
+
+        const url = new URL(`/view/${submissionID}/`, FurAffinityAPI.BASE_URL);
+        const $ = await this.fetchHTML(url);
+
+        const imgElement = $('img#submissionImg');
+
+        return {
+            id: submissionID,
+            thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', FurAffinityAPI.BASE_URL),
+            title: $('div.submission-title').text().trim(),
+            uploader: FurAffinityAPI.parseUserAnchor($('div.submission-id-sub-container a')),
+            file: new URL(imgElement.attr('data-fullview-src') ?? '', FurAffinityAPI.BASE_URL),
+            description: $('div.submission-description').text().trim(),
+        };
+    }
+
+    public async downloadFile(url: URL, dest: PathLike): Promise<void> {
+        const response = await this.fetchRaw(url, false);
+
+        const file = createWriteStream(dest);
+        const fileStream = new WritableStream({
+            write(chunk) {
+                file.write(chunk);
+            },
+            close() {
+                file.close();
+            },
+        });
+
+        await response.body?.pipeTo(fileStream);
+    }
+
+    private async fetchHTML(url: URL): Promise<CheerioAPI> {
+        const response = await this.fetchRaw(url, true);
+
+        const $ = cheerioLoad(await response.text());
+        FurAffinityAPI.checkSystemError($);
+        return $;
+    }
+
+    private async fetchRaw(url: URL, includeCookies: boolean): Promise<Response> {
+        if (includeCookies && (url.protocol !== 'https:' || url.host !== 'www.furaffinity.net')) {
+            throw new Error(`Invalid URL for Cookies: ${url.href});`);
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : '',
+            },
+            keepalive: true,
+            redirect: 'follow',
+        });
+
+        if (response.status < 200 || response.status > 299) {
+            throw new HttpError(response.status, url);
+        }
+
+        return response;
+    }
+
+    private async rawWatchListParse(
+        userID: string,
+        watchDirection: 'by' | 'to',
+        page = 1,
+    ): Promise<IPaginatedResponse<IUserPreview[]>> {
         if (page < 1) {
             throw new Error('Page must be >= 1');
         }
 
-        const url = new URL(`/watchlist/by/${userID}/${page}/`, FurAffinityAPI.BASE_URL);
-        const $ = await this.fetchURL(url);
+        const url = new URL(`/watchlist/${watchDirection}/${userID}/${page}/`, FurAffinityAPI.BASE_URL);
+        const $ = await this.fetchHTML(url);
 
         const items = $('div.watch-list-items a').map((_, elem) => {
             return FurAffinityAPI.parseUserAnchor($(elem));
@@ -142,41 +244,9 @@ export class FurAffinityAPI {
         return FurAffinityAPI.enhanceResultWithPagination(items.get(), $, url, 'Next ', 'Back ');
     }
 
-    public async galleryPage(userID: string, page = 1): Promise<IPaginatedResponse<ISubmissionPreview[]>> {
-        return this.rawGalleryParse(userID, 'gallery', page);
-    }
-
-    public async scrapsPage(userID: string, page = 1): Promise<IPaginatedResponse<ISubmissionPreview[]>> {
-        return this.rawGalleryParse(userID, 'scraps', page);
-    }
-
-    public async watchingListFull(userID: string): Promise<IUser[]> {
-        return FurAffinityAPI.autoPaginate(this.watchingListPage.bind(this), userID);
-    }
-
-    private async fetchURL(url: URL): Promise<CheerioAPI> {
-        if (url.protocol !== 'https:' || url.host !== 'www.furaffinity.net') {
-            throw new Error(`Invalid URL: ${url.href});`);
-        }
-
-        const response = await fetch(url, {
-            headers: {
-                cookie: `a=${this.cookieA}; b=${this.cookieB}`,
-            },
-        });
-
-        if (response.status !== 200) {
-            throw new HttpError(response.status, url);
-        }
-
-        const $ = cheerioLoad(await response.text());
-        FurAffinityAPI.checkSystemError($);
-        return $;
-    }
-
     private async rawGalleryParse(
         userID: string,
-        category: string,
+        category: 'gallery' | 'scraps',
         page = 1,
     ): Promise<IPaginatedResponse<ISubmissionPreview[]>> {
         if (page < 1) {
@@ -184,7 +254,7 @@ export class FurAffinityAPI {
         }
 
         const url = new URL(`/${category}/${userID}/${page}/`, FurAffinityAPI.BASE_URL);
-        const $ = await this.fetchURL(url);
+        const $ = await this.fetchHTML(url);
 
         const items = $('figure').map((_, elem) => {
             return FurAffinityAPI.parseSubmissionFigure(url, $(elem));

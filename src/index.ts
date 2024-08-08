@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
 import { configDotenv } from 'dotenv';
-import { FurAffinityAPI, IUser } from './furaffinity';
+import { FurAffinityAPI, IUserPreview } from './furaffinity';
 
 configDotenv();
 
@@ -16,8 +16,8 @@ async function main(): Promise<void> {
     const startUser = process.env.FA_GRAPH_START ?? 'doridian';
 
     const FA = new FurAffinityAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
-    const gallery = await FA.galleryPage(startUser, 1);
-    console.log(gallery);
+    const img = await FA.getSubmission('9380872');
+    console.log(img);
 
     throw new Error('no');
     const graph = await buildUserGraph(FA, startUser, 2);
@@ -27,7 +27,7 @@ async function main(): Promise<void> {
 
 interface IUserGraphQueueEntry {
     id: string;
-    raw: IUser;
+    raw: IUserPreview;
     depth: number;
 }
 
@@ -35,7 +35,7 @@ async function buildUserGraph(FA: FurAffinityAPI, startUser: string, maxDepth: n
     const queue: IUserGraphQueueEntry[] = [];
     const visited = new Set<string>();
 
-    const startWatching = await FA.watchingListFull(startUser);
+    const startWatching = await FA.getWatching(startUser);
     console.log(`Start user ${startUser} is watching ${startWatching.length} users`);
     for (const user of startWatching) {
         queue.push({ id: user.id, depth: 1, raw: user });
@@ -58,7 +58,7 @@ async function buildUserGraph(FA: FurAffinityAPI, startUser: string, maxDepth: n
         }
 
         console.log('Checking user', entry.id, 'at depth', entry.depth);
-        const watching = await FA.watchingListFull(entry.id);
+        const watching = await FA.getWatching(entry.id);
         console.log(`User ${entry.id} is watching ${watching.length} users`);
         for (const user of watching) {
             queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
@@ -67,19 +67,6 @@ async function buildUserGraph(FA: FurAffinityAPI, startUser: string, maxDepth: n
 
     return visited;
 }
-
-/*
- *async function test1(): Promise<void> {
- *    const g = await gallery('doridian', 0, 20);
- *    for (const x of g) {
- *        // eslint-disable-next-line no-await-in-loop
- *        const sub = await x.getSubmission();
- *        console.log(sub);
- *    }
- *
- *    console.log(g);
- *}
- */
 
 // eslint-disable-next-line unicorn/prefer-top-level-await
 main().catch(console.error);
