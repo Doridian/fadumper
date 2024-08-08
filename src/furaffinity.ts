@@ -18,6 +18,11 @@ export interface ISubmissionPreview {
 export interface ISubmission extends ISubmissionPreview {
     file: URL;
     description: string;
+
+    category: string;
+    type: string;
+    species: string;
+    gender: string;
 }
 
 interface IPaginatedResponse<Entry> {
@@ -55,6 +60,10 @@ export class FurAffinityAPI {
         private readonly cookieA = '',
         private readonly cookieB = '',
     ) {}
+
+    private static parseHTMLUserContent(elem: Cheerio<Element>): string {
+        return elem.text().trim();
+    }
 
     private static async autoPaginate<Entry, ReqArg>(
         func: PaginatedFetchFunction<Entry, ReqArg>,
@@ -173,11 +182,15 @@ export class FurAffinityAPI {
 
         return {
             id: submissionID,
-            thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', FurAffinityAPI.BASE_URL),
+            thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', url),
             title: $('div.submission-title').text().trim(),
             uploader: FurAffinityAPI.parseUserAnchor($('div.submission-id-sub-container a')),
-            file: new URL(imgElement.attr('data-fullview-src') ?? '', FurAffinityAPI.BASE_URL),
-            description: $('div.submission-description').text().trim(),
+            file: new URL(imgElement.attr('data-fullview-src') ?? '', url),
+            description: FurAffinityAPI.parseHTMLUserContent($('div.submission-description')),
+            category: $('span.category-name').first().text().trim(),
+            type: $('span.type-name').first().text().trim(),
+            species: $('strong.highlight:contains("Species") + span').first().text().trim(),
+            gender: $('strong.highlight:contains("Gender") + span').first().text().trim(),
         };
     }
 
