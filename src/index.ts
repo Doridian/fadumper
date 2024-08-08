@@ -2,7 +2,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
 import { configDotenv } from 'dotenv';
-import { FurAffinityAPI, IUserPreview } from './furaffinity';
+import { Client } from './Client';
+import { RawAPI } from './RawAPI';
+import { IUserPreview } from './models';
 
 configDotenv();
 
@@ -15,12 +17,12 @@ async function main(): Promise<void> {
 
     const startUser = process.env.FA_GRAPH_START ?? 'doridian';
 
-    const FA = new FurAffinityAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
-    const img = await FA.getSubmission('9380872');
+    const fa = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
+    const img = await fa.getSubmission('9380872');
     console.log(img);
 
     throw new Error('no');
-    const graph = await buildUserGraph(FA, startUser, 2);
+    const graph = await buildUserGraph(fa, startUser, 2);
     console.log(graph);
     console.log(graph.size);
 }
@@ -31,13 +33,12 @@ interface IUserGraphQueueEntry {
     depth: number;
 }
 
-async function buildUserGraph(FA: FurAffinityAPI, startUser: string, maxDepth: number): Promise<Set<string>> {
+async function buildUserGraph(FA: Client, startUser: string, maxDepth: number): Promise<Set<string>> {
     const queue: IUserGraphQueueEntry[] = [];
     const visited = new Set<string>();
 
-    const startWatching = await FA.getWatching(startUser);
-    console.log(`Start user ${startUser} is watching ${startWatching.length} users`);
-    for (const user of startWatching) {
+    console.log(`Start user ${startUser} is watching users`);
+    for await (const user of FA.getWatching(startUser)) {
         queue.push({ id: user.id, depth: 1, raw: user });
     }
 
@@ -58,9 +59,8 @@ async function buildUserGraph(FA: FurAffinityAPI, startUser: string, maxDepth: n
         }
 
         console.log('Checking user', entry.id, 'at depth', entry.depth);
-        const watching = await FA.getWatching(entry.id);
-        console.log(`User ${entry.id} is watching ${watching.length} users`);
-        for (const user of watching) {
+        console.log(`User ${entry.id} is watching users`);
+        for await (const user of FA.getWatching(entry.id)) {
             queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
         }
     }
