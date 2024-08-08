@@ -2,6 +2,7 @@
 import { createWriteStream, PathLike } from 'node:fs';
 import { WritableStream } from 'node:stream/web';
 import { Cheerio, CheerioAPI, load as cheerioLoad, Element } from 'cheerio';
+import { ElementType } from 'domelementtype';
 
 export interface IUserPreview {
     id: string;
@@ -18,7 +19,6 @@ export interface ISubmissionPreview {
 export interface ISubmission extends ISubmissionPreview {
     file: URL;
     description: string;
-
     category: string;
     type: string;
     species: string;
@@ -54,6 +54,7 @@ export class FurAffinityAPI {
     private static readonly USER_ID_REGEX = /\/user\/([^/]+)(\/|$)/;
     private static readonly SUBMISSION_ID_REGEX = /\/view\/([^/]+)(\/|$)/;
     private static readonly STRIP_TRAILING_SLASHES = /\/+$/;
+    private static readonly STRIP_INVISIBLE_WHITESPACE = /\s+/g;
     private static readonly BASE_URL = 'https://www.furaffinity.net';
 
     public constructor(
@@ -61,8 +62,48 @@ export class FurAffinityAPI {
         private readonly cookieB = '',
     ) {}
 
-    private static parseHTMLUserContent(elem: Cheerio<Element>): string {
-        return elem.text().trim();
+    private static parseHTMLUserContent($: CheerioAPI, elem: Cheerio<Element>): string {
+        let result = '';
+        const addToResult = (str: string) => {
+            const endsWithSpace = str.endsWith(' ');
+            result +=
+                (!result.endsWith(' ') && str.startsWith(' ') ? ' ' : '') + str.trim() + (endsWithSpace ? ' ' : '');
+        };
+
+        elem.contents().each((_, child) => {
+            if (child.type === ElementType.Text) {
+                addToResult(child.data.replace(FurAffinityAPI.STRIP_INVISIBLE_WHITESPACE, ' '));
+                return;
+            }
+
+            if (child.type !== ElementType.Tag) {
+                return;
+            }
+
+            switch (child.tagName.toLowerCase()) {
+                case 'br':
+                    result += '\n'; // Do not call addToResult as this never gets whitespaces
+                    return;
+                case 'a': {
+                    const childCheerio = $(child);
+                    if (childCheerio.hasClass('iconusername')) {
+                        const hasUsernameSuffix = !!childCheerio.text().trim();
+                        const userPreview = FurAffinityAPI.parseUserAnchor(childCheerio);
+                        addToResult(hasUsernameSuffix ? `:icon${userPreview.name}:` : `:${userPreview.name}icon:`);
+                    } else if (childCheerio.hasClass('linkusername')) {
+                        const userPreview = FurAffinityAPI.parseUserAnchor(childCheerio);
+                        addToResult(`:link${userPreview.name}:`);
+                    } else {
+                        throw new Error(`Unknown link type: ${childCheerio.toString()}`);
+                    }
+                    return;
+                }
+            }
+
+            throw new Error(`Unknown element type: ${child.tagName}`);
+        });
+
+        return result.trim();
     }
 
     private static async autoPaginate<Entry, ReqArg>(
@@ -186,7 +227,7 @@ export class FurAffinityAPI {
             title: $('div.submission-title').text().trim(),
             uploader: FurAffinityAPI.parseUserAnchor($('div.submission-id-sub-container a')),
             file: new URL(imgElement.attr('data-fullview-src') ?? '', url),
-            description: FurAffinityAPI.parseHTMLUserContent($('div.submission-description')),
+            description: FurAffinityAPI.parseHTMLUserContent($, $('div.submission-description')),
             category: $('span.category-name').first().text().trim(),
             type: $('span.type-name').first().text().trim(),
             species: $('strong.highlight:contains("Species") + span').first().text().trim(),
