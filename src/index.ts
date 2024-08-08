@@ -13,12 +13,14 @@ async function main(): Promise<void> {
         console.log('Anonymous login');
     }
 
+    const startUser = process.env.FA_GRAPH_START ?? 'doridian';
+
     const FA = new FurAffinityAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
-    const gallery = await FA.galleryPage('doridian', 1);
+    const gallery = await FA.galleryPage(startUser, 1);
     console.log(gallery);
 
     throw new Error('no');
-    const graph = await buildUserGraph(FA, process.env.FA_GRAPH_START ?? 'doridian', 2);
+    const graph = await buildUserGraph(FA, startUser, 2);
     console.log(graph);
     console.log(graph.size);
 }

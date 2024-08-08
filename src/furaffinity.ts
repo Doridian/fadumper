@@ -187,6 +187,6 @@ export class FurAffinityAPI {
             return FurAffinityAPI.parseSubmissionFigure(url, $(elem));
         });
 
-        return FurAffinityAPI.enhanceResultWithPagination(items.get(), $, url, 'Next ', 'Back ');
+        return FurAffinityAPI.enhanceResultWithPagination(items.get(), $, url, 'Next', 'Prev');
     }
 }
