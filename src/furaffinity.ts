@@ -18,10 +18,10 @@ export interface ISubmission extends ISubmissionPreview {
     description: string;
 }
 
-interface IPaginatedResponse<X> {
+interface IPaginatedResponse<Entry> {
     nextPage: number | undefined;
     prevPage: number | undefined;
-    data: X;
+    data: Entry;
 }
 
 export class HttpError extends Error {
@@ -41,7 +41,10 @@ export class FASystemError extends Error {
     }
 }
 
-type PaginatedFetchFunction<X, Y> = (param: Y, page: number) => Promise<IPaginatedResponse<X[]>>;
+type PaginatedFetchFunction<Entry, ReqOptions> = (
+    param: ReqOptions,
+    page: number,
+) => Promise<IPaginatedResponse<Entry[]>>;
 
 export class FurAffinityAPI {
     private static readonly USER_ID_REGEX = /\/user\/([^/]+)(\/|$)/;
@@ -110,13 +113,13 @@ export class FurAffinityAPI {
         return Number.parseInt(normalizedPagePath.split('/').pop() ?? '1', 10);
     }
 
-    private static enhanceResultWithPagination<X>(
-        result: X,
+    private static enhanceResultWithPagination<Entry>(
+        result: Entry,
         $: CheerioAPI,
         reqUrl: URL,
         nextPageMatcher: string,
         prevPageMatcher: string,
-    ): IPaginatedResponse<X> {
+    ): IPaginatedResponse<Entry> {
         return {
             nextPage: FurAffinityAPI.parsePageUrl(reqUrl, $(`form:contains("${nextPageMatcher}")`).attr('action')),
             prevPage: FurAffinityAPI.parsePageUrl(reqUrl, $(`form:contains("${prevPageMatcher}")`).attr('action')),
