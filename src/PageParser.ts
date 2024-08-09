@@ -9,7 +9,8 @@ export class PageParser {
     private static readonly USER_ID_REGEX = /\/user\/([^/]+)(\/|$)/;
     private static readonly SUBMISSION_ID_REGEX = /\/view\/([^/]+)(\/|$)/;
     private static readonly STRIP_TRAILING_SLASHES = /\/+$/;
-    private static readonly STRIP_INVISIBLE_WHITESPACE = /\s+/g;
+    private static readonly STRIP_INVISIBLE_WHITESPACE_PRE = /\s+/g;
+    private static readonly STRIP_INVISIBLE_WHITESPACE_POST = /([\n ]) +/g;
     private static readonly QUOTE_NAME_SUFFIX = 'wrote:';
 
     public static enhanceResultWithPagination<Entry>(
@@ -105,7 +106,7 @@ export class PageParser {
 
         for (const child of elem.contents()) {
             if (child.type === ElementType.Text) {
-                addToResult(child.data.replace(PageParser.STRIP_INVISIBLE_WHITESPACE, ' '));
+                addToResult(child.data.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_PRE, ' '));
                 continue;
             }
 
@@ -222,6 +223,6 @@ export class PageParser {
             throw new Error(`Unhandled element: ${childCheerio.toString()}`);
         }
 
-        return result.trim();
+        return result.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_POST, '$1').trim();
     }
 }
