@@ -17,9 +17,9 @@ async function main(): Promise<void> {
     const startUser = process.env.FA_GRAPH_START ?? 'doridian';
 
     const fa = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
-    console.log(await fa.getJournal('833448'));
+    console.log(await fa.getSubmission('56893400'));
 
-    throw new Error('Not implemented');
+    throw new Error('No');
     const graph = await buildUserGraph(fa, startUser, 2);
     console.log(graph);
     console.log(graph.size);

@@ -7,7 +7,7 @@ export interface ISubmissionPreview {
     id: string;
     thumbnail: URL;
     title: string;
-    uploader: IUserPreview;
+    uploader?: IUserPreview;
 }
 
 export interface ISubmission extends ISubmissionPreview {
@@ -28,7 +28,7 @@ export interface IPaginatedResponse<Entry> {
 // eslint-disable-next-line import/no-unused-modules
 export interface IJournalPreview {
     id: string;
-    author: IUserPreview;
+    author?: IUserPreview;
     title: string;
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 /* eslint-disable max-depth */
 import { Cheerio, CheerioAPI, Element } from 'cheerio';
 import { ElementType } from 'domelementtype';
@@ -49,17 +50,26 @@ export class PageParser {
         };
     }
 
-    public static parseUserAnchor(elem: Cheerio<Element>): IUserPreview {
+    public static parseUserAnchor(elem: Cheerio<Element>): IUserPreview | undefined {
+        const id = PageParser.USER_ID_REGEX.exec(elem.attr('href') ?? '')?.[1];
+        if (!id) {
+            return undefined;
+        }
+
         return {
-            id: PageParser.USER_ID_REGEX.exec(elem.attr('href') ?? '')?.[1] ?? '',
+            id,
             name: elem.text().trim(),
         };
+    }
+
+    public static parseSubmissionAnchor(elem: Cheerio<Element>): string | undefined {
+        return PageParser.SUBMISSION_ID_REGEX.exec(elem.attr('href') ?? '')?.[1];
     }
 
     public static parseSubmissionFigure(reqUrl: URL, elem: Cheerio<Element>): ISubmissionPreview {
         const figCaption = elem.find('figcaption');
         return {
-            id: PageParser.SUBMISSION_ID_REGEX.exec(elem.find('a').attr('href') ?? '')?.[1] ?? '',
+            id: PageParser.parseSubmissionAnchor(elem.find('a')) ?? '',
             thumbnail: new URL(elem.find('img').attr('src') ?? '', reqUrl),
             title: figCaption.find('p:first').text().trim(),
             uploader: PageParser.parseUserAnchor(figCaption.find('p:last a')),
@@ -106,7 +116,6 @@ export class PageParser {
             const childCheerio = $(child);
             let handled = false;
 
-            // TODO: Comic navigation links aka [1,2,3] => <<< PREV | FIRST | NEXT >>>>
             switch (child.tagName.toLowerCase()) {
                 case 'br':
                     result += '\n'; // Do not call addToResult as this never gets whitespaces
@@ -116,14 +125,14 @@ export class PageParser {
                     if (childCheerio.hasClass('iconusername')) {
                         const hasUsernameSuffix = !!childCheerio.text().trim();
                         const userPreview = PageParser.parseUserAnchor(childCheerio);
-                        addToResult(hasUsernameSuffix ? `:icon${userPreview.name}:` : `:${userPreview.name}icon:`);
+                        addToResult(hasUsernameSuffix ? `:icon${userPreview?.name}:` : `:${userPreview?.name}icon:`);
                         handled = true;
                         break;
                     }
 
                     if (childCheerio.hasClass('linkusername')) {
                         const userPreview = PageParser.parseUserAnchor(childCheerio);
-                        addToResult(`:link${userPreview.name}:`);
+                        addToResult(`:link${userPreview?.name}:`);
                         handled = true;
                         break;
                     }
@@ -181,7 +190,24 @@ export class PageParser {
                             handled = true;
                             break;
                         }
+
+                        break;
                     }
+
+                    if (childCheerio.hasClass('parsed_nav_links')) {
+                        const prevLink =
+                            PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("PREV")')) ?? '-';
+                        const firstLink =
+                            PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("FIRST")')) ?? '-';
+                        const nextLink =
+                            PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("NEXT")')) ?? '-';
+
+                        addToResult(`[${prevLink},${firstLink},${nextLink}]`);
+
+                        handled = true;
+                        break;
+                    }
+
                     break;
                 case 'hr':
                     result += '\n-----\n';
