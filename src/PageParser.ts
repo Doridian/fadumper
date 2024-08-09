@@ -84,7 +84,6 @@ export class PageParser {
         return url.pathname.replace(PageParser.STRIP_TRAILING_SLASHES, '');
     }
 
-    // eslint-disable-next-line complexity
     private static parseHTMLUserContent($: CheerioAPI, elem: Cheerio<Element>): string {
         let result = '';
         const addToResult = (str: string) => {
