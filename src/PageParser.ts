@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 import { Cheerio, CheerioAPI, Element } from 'cheerio';
 import { ElementType } from 'domelementtype';
 import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } from './models';
@@ -115,17 +116,25 @@ export class PageParser {
                         const hasUsernameSuffix = !!childCheerio.text().trim();
                         const userPreview = PageParser.parseUserAnchor(childCheerio);
                         addToResult(hasUsernameSuffix ? `:icon${userPreview.name}:` : `:${userPreview.name}icon:`);
-                    } else if (childCheerio.hasClass('linkusername')) {
+                        handled = true;
+                        break;
+                    }
+
+                    if (childCheerio.hasClass('linkusername')) {
                         const userPreview = PageParser.parseUserAnchor(childCheerio);
                         addToResult(`:link${userPreview.name}:`);
-                    } else if (childCheerio.hasClass('named_url')) {
+                        handled = true;
+                        break;
+                    }
+
+                    if (childCheerio.hasClass('named_url')) {
                         addToResult(
                             `[url=${childCheerio.attr('href')}]${PageParser.parseHTMLUserContent($, childCheerio)}[/url]`,
                         );
-                    } else {
-                        throw new Error(`Unknown link type: ${childCheerio.toString()}`);
+                        handled = true;
+                        break;
                     }
-                    handled = true;
+
                     break;
                 case 'strong':
                 case 'code':
@@ -187,7 +196,7 @@ export class PageParser {
                 continue;
             }
 
-            throw new Error(`Unknown element type: ${childCheerio.toString()}`);
+            throw new Error(`Unhandled element: ${childCheerio.toString()}`);
         }
 
         return result.trim();
