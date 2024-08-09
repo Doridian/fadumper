@@ -24,3 +24,14 @@ export interface IPaginatedResponse<Entry> {
     prevPage: number | undefined;
     data: Entry;
 }
+
+// eslint-disable-next-line import/no-unused-modules
+export interface IJournalPreview {
+    id: string;
+    author: IUserPreview;
+    title: string;
+}
+
+export interface IJournal extends IJournalPreview {
+    content: string;
+}

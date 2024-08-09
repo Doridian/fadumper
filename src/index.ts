@@ -17,7 +17,9 @@ async function main(): Promise<void> {
     const startUser = process.env.FA_GRAPH_START ?? 'doridian';
 
     const fa = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
+    console.log(await fa.getJournal('833448'));
 
+    throw new Error('Not implemented');
     const graph = await buildUserGraph(fa, startUser, 2);
     console.log(graph);
     console.log(graph.size);
@@ -51,6 +53,11 @@ async function buildUserGraph(FA: Client, startUser: string, maxDepth: number): 
         }
 
         visited.add(entry.id);
+
+        const g = await FA.galleryPage(entry.id);
+        for (const submissionPreview of g.data) {
+            console.log('Sub', await FA.getSubmission(submissionPreview.id));
+        }
 
         if (entry.depth >= maxDepth) {
             continue;

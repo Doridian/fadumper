@@ -1,6 +1,6 @@
 import { PageParser } from './PageParser';
 import { RawAPI } from './RawAPI';
-import { IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } from './models';
+import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } from './models';
 
 type PaginatedFetchFunction<Entry, ReqArg> = (param: ReqArg, page: number) => Promise<IPaginatedResponse<Entry[]>>;
 
@@ -59,6 +59,14 @@ export class Client {
         return {
             ...PageParser.parseSubmission(await this.rawAPI.fetchHTML(url), url),
             id: submissionID,
+        };
+    }
+
+    public async getJournal(journalID: string): Promise<IJournal> {
+        const url = new URL(`/journal/${journalID}/`, RawAPI.BASE_URL);
+        return {
+            ...PageParser.parseJournal(await this.rawAPI.fetchHTML(url)),
+            id: journalID,
         };
     }
 

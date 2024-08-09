@@ -1,6 +1,6 @@
 import { Cheerio, CheerioAPI, Element } from 'cheerio';
 import { ElementType } from 'domelementtype';
-import { IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } from './models';
+import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } from './models';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class PageParser {
@@ -8,6 +8,7 @@ export class PageParser {
     private static readonly SUBMISSION_ID_REGEX = /\/view\/([^/]+)(\/|$)/;
     private static readonly STRIP_TRAILING_SLASHES = /\/+$/;
     private static readonly STRIP_INVISIBLE_WHITESPACE = /\s+/g;
+    private static readonly QUOTE_NAME_SUFFIX = 'wrote:';
 
     public static enhanceResultWithPagination<Entry>(
         result: Entry,
@@ -36,6 +37,14 @@ export class PageParser {
             type: $('span.type-name').first().text().trim(),
             species: $('strong.highlight:contains("Species") + span').first().text().trim(),
             gender: $('strong.highlight:contains("Gender") + span').first().text().trim(),
+        };
+    }
+
+    public static parseJournal($: CheerioAPI): Omit<IJournal, 'id'> {
+        return {
+            title: $('div.journal-title').text().trim(),
+            author: PageParser.parseUserAnchor($('userpage-nav-avatar a')),
+            content: PageParser.parseHTMLUserContent($, $('div.journal-content')),
         };
     }
 
@@ -75,6 +84,7 @@ export class PageParser {
         return url.pathname.replace(PageParser.STRIP_TRAILING_SLASHES, '');
     }
 
+    // eslint-disable-next-line complexity
     private static parseHTMLUserContent($: CheerioAPI, elem: Cheerio<Element>): string {
         let result = '';
         const addToResult = (str: string) => {
@@ -93,12 +103,15 @@ export class PageParser {
                 continue;
             }
 
+            const childCheerio = $(child);
+            let handled = false;
+
             switch (child.tagName.toLowerCase()) {
                 case 'br':
                     result += '\n'; // Do not call addToResult as this never gets whitespaces
-                    continue;
-                case 'a': {
-                    const childCheerio = $(child);
+                    handled = true;
+                    break;
+                case 'a':
                     if (childCheerio.hasClass('iconusername')) {
                         const hasUsernameSuffix = !!childCheerio.text().trim();
                         const userPreview = PageParser.parseUserAnchor(childCheerio);
@@ -106,14 +119,76 @@ export class PageParser {
                     } else if (childCheerio.hasClass('linkusername')) {
                         const userPreview = PageParser.parseUserAnchor(childCheerio);
                         addToResult(`:link${userPreview.name}:`);
+                    } else if (childCheerio.hasClass('named_url')) {
+                        addToResult(
+                            `[url=${childCheerio.attr('href')}]${PageParser.parseHTMLUserContent($, childCheerio)}[/url]`,
+                        );
                     } else {
                         throw new Error(`Unknown link type: ${childCheerio.toString()}`);
                     }
-                    continue;
-                }
+                    handled = true;
+                    break;
+                case 'strong':
+                case 'code':
+                case 'span':
+                case 'sup':
+                case 'sub':
+                case 'u':
+                case 'b':
+                case 's':
+                case 'i':
+                    if (childCheerio.hasClass('bbcode')) {
+                        const style = childCheerio.css('color');
+                        if (style) {
+                            addToResult(`[color=${style}]${PageParser.parseHTMLUserContent($, childCheerio)}[/color]`);
+                            handled = true;
+                            break;
+                        }
+
+                        for (const tagType of ['b', 'i', 'u', 's', 'sup', 'sub', 'center', 'right', 'left']) {
+                            if (childCheerio.hasClass(`bbcode_${tagType}`)) {
+                                addToResult(
+                                    `[${tagType}]${PageParser.parseHTMLUserContent($, childCheerio)}[/${tagType}]`,
+                                );
+                                handled = true;
+                                break;
+                            }
+                        }
+
+                        if (handled) {
+                            break;
+                        }
+
+                        if (childCheerio.hasClass('bbcode_quote')) {
+                            const nameEle = childCheerio.find('.bbcode_quote_name');
+                            let authorName = nameEle.text().trim();
+                            if (authorName.endsWith(PageParser.QUOTE_NAME_SUFFIX)) {
+                                authorName = authorName.slice(0, -PageParser.QUOTE_NAME_SUFFIX.length).trim();
+                            }
+                            nameEle.remove();
+                            if (authorName) {
+                                addToResult(
+                                    `[quote=${authorName}]${PageParser.parseHTMLUserContent($, childCheerio)}[/quote]`,
+                                );
+                            } else {
+                                addToResult(`[quote]${PageParser.parseHTMLUserContent($, childCheerio)}[/quote]`);
+                            }
+                            handled = true;
+                            break;
+                        }
+                    }
+                    break;
+                case 'hr':
+                    result += '\n-----\n';
+                    handled = true;
+                    break;
             }
 
-            throw new Error(`Unknown element type: ${child.tagName}`);
+            if (handled) {
+                continue;
+            }
+
+            throw new Error(`Unknown element type: ${childCheerio.toString()}`);
         }
 
         return result.trim();
