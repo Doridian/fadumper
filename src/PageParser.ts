@@ -106,6 +106,7 @@ export class PageParser {
             const childCheerio = $(child);
             let handled = false;
 
+            // TODO: Comic navigation links aka [1,2,3] => <<< PREV | FIRST | NEXT >>>>
             switch (child.tagName.toLowerCase()) {
                 case 'br':
                     result += '\n'; // Do not call addToResult as this never gets whitespaces
