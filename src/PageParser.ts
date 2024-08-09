@@ -1,9 +1,7 @@
-/* eslint-disable import/no-unused-modules */
 import { Cheerio, CheerioAPI, Element } from 'cheerio';
 import { ElementType } from 'domelementtype';
 import { IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } from './models';
 
-/* eslint-disable @typescript-eslint/member-ordering */
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class PageParser {
     private static readonly USER_ID_REGEX = /\/user\/([^/]+)(\/|$)/;

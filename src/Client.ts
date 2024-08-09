@@ -4,7 +4,6 @@ import { IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } fro
 
 type PaginatedFetchFunction<Entry, ReqArg> = (param: ReqArg, page: number) => Promise<IPaginatedResponse<Entry[]>>;
 
-// eslint-disable-next-line import/no-unused-modules
 export class Client {
     public constructor(private readonly rawAPI: RawAPI) {}
 
