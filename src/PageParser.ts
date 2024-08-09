@@ -154,20 +154,6 @@ export class PageParser {
                             break;
                         }
 
-                        for (const tagType of ['b', 'i', 'u', 's', 'sup', 'sub', 'center', 'right', 'left']) {
-                            if (childCheerio.hasClass(`bbcode_${tagType}`)) {
-                                addToResult(
-                                    `[${tagType}]${PageParser.parseHTMLUserContent($, childCheerio)}[/${tagType}]`,
-                                );
-                                handled = true;
-                                break;
-                            }
-                        }
-
-                        if (handled) {
-                            break;
-                        }
-
                         if (childCheerio.hasClass('bbcode_quote')) {
                             const nameEle = childCheerio.find('.bbcode_quote_name');
                             let authorName = nameEle.text().trim();
@@ -182,6 +168,16 @@ export class PageParser {
                             } else {
                                 addToResult(`[quote]${PageParser.parseHTMLUserContent($, childCheerio)}[/quote]`);
                             }
+                            handled = true;
+                            break;
+                        }
+
+                        for (const tagType of ['b', 'i', 'u', 's', 'sup', 'sub', 'center', 'right', 'left']) {
+                            if (!childCheerio.hasClass(`bbcode_${tagType}`)) {
+                                continue;
+                            }
+
+                            addToResult(`[${tagType}]${PageParser.parseHTMLUserContent($, childCheerio)}[/${tagType}]`);
                             handled = true;
                             break;
                         }
