@@ -23,19 +23,19 @@ export class Client {
     }
 
     public async getWatchingPage(userID: string, page = 1): Promise<IPaginatedResponse<IUserPreview[]>> {
-        return this.rawWatchListParse(userID, 'by', page);
+        return this.rawWatchListFetchAndParse(userID, 'by', page);
     }
 
     public async getWatchedByPage(userID: string, page = 1): Promise<IPaginatedResponse<IUserPreview[]>> {
-        return this.rawWatchListParse(userID, 'to', page);
+        return this.rawWatchListFetchAndParse(userID, 'to', page);
     }
 
     public async galleryPage(userID: string, page = 1): Promise<IPaginatedResponse<ISubmissionPreview[]>> {
-        return this.rawGalleryParse(userID, 'gallery', page);
+        return this.rawGalleryFetchAndParse(userID, 'gallery', page);
     }
 
     public async getScrapsPage(userID: string, page = 1): Promise<IPaginatedResponse<ISubmissionPreview[]>> {
-        return this.rawGalleryParse(userID, 'scraps', page);
+        return this.rawGalleryFetchAndParse(userID, 'scraps', page);
     }
 
     public getWatching(userID: string): AsyncGenerator<IUserPreview, void, void> {
@@ -62,7 +62,7 @@ export class Client {
         };
     }
 
-    private async rawGalleryParse(
+    private async rawGalleryFetchAndParse(
         userID: string,
         category: 'gallery' | 'scraps',
         page = 1,
@@ -81,7 +81,7 @@ export class Client {
         return PageParser.enhanceResultWithPagination(items.get(), $, url, 'Next', 'Prev');
     }
 
-    private async rawWatchListParse(
+    private async rawWatchListFetchAndParse(
         userId: string,
         watchDirection: 'by' | 'to',
         page = 1,
