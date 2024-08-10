@@ -1,7 +1,8 @@
 /* eslint-disable complexity */
 /* eslint-disable max-depth */
-import { Cheerio, CheerioAPI, Element } from 'cheerio';
+import { Cheerio, CheerioAPI } from 'cheerio';
 import { ElementType } from 'domelementtype';
+import { Element } from 'domhandler';
 import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } from './models';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
