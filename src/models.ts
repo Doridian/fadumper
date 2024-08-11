@@ -33,14 +33,10 @@ export interface IPaginatedResponse<Entry> {
     data: Entry;
 }
 
-// eslint-disable-next-line import/no-unused-modules
-export interface IJournalPreview {
+export interface IJournal {
     id: string;
     author?: IUserPreview;
     title: string;
-}
-
-export interface IJournal extends IJournalPreview {
     content: string;
     uploaded: Date;
 }

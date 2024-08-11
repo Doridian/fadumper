@@ -16,11 +16,11 @@ async function main(): Promise<void> {
 
     const startUser = process.env.FA_GRAPH_START ?? 'doridian';
 
-    const fa = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
-    console.log(await fa.getSubmission('56893411'));
+    const FA = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
+    console.log(await FA.getSubmission('56893411'));
 
     throw new Error('No');
-    const graph = await buildUserGraph(fa, startUser, 2);
+    const graph = await buildUserGraph(FA, startUser, 2);
     console.log(graph);
     console.log(graph.size);
 }

@@ -38,6 +38,10 @@ export class Client {
         return this.rawGalleryFetchAndParse(userID, 'scraps', page);
     }
 
+    public async getJournalsPage(userID: string, page = 1): Promise<IPaginatedResponse<IJournal[]>> {
+        return this.rawJournalFetchAndParse(userID, page);
+    }
+
     public getWatching(userID: string): AsyncGenerator<IUserPreview, void, void> {
         return Client.autoPaginate(this.getWatchingPage.bind(this), userID);
     }
@@ -52,6 +56,10 @@ export class Client {
 
     public getScraps(userID: string): AsyncGenerator<ISubmissionPreview, void, void> {
         return Client.autoPaginate(this.getScrapsPage.bind(this), userID);
+    }
+
+    public getJournals(userID: string): AsyncGenerator<IJournal, void, void> {
+        return Client.autoPaginate(this.getJournalsPage.bind(this), userID);
     }
 
     public async getSubmission(submissionID: string): Promise<ISubmission> {
@@ -73,6 +81,21 @@ export class Client {
     public async getUserpage(userID: string): Promise<IUser> {
         const url = new URL(`/user/${userID}/`, RawAPI.BASE_URL);
         return PageParser.parsesUserPage(await this.rawAPI.fetchHTML(url), url);
+    }
+
+    private async rawJournalFetchAndParse(userID: string, page = 1): Promise<IPaginatedResponse<IJournal[]>> {
+        if (page < 1) {
+            throw new Error('Page must be >= 1');
+        }
+
+        const url = new URL(`/journals/${userID}/${page}/`, RawAPI.BASE_URL);
+        const $ = await this.rawAPI.fetchHTML(url);
+
+        const items = $('section').map((_, elem) => {
+            return PageParser.parseJournalSection($, $(elem));
+        });
+
+        return PageParser.enhanceResultWithPagination(items.get(), $, url, 'Older', 'Newer');
     }
 
     private async rawGalleryFetchAndParse(
