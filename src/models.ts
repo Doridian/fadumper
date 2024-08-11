@@ -3,6 +3,13 @@ export interface IUserPreview {
     name: string;
 }
 
+export interface IUser extends IUserPreview {
+    avatar?: URL;
+    profile: string;
+    userType: string;
+    registered: Date;
+}
+
 export interface ISubmissionPreview {
     id: string;
     thumbnail: URL;
@@ -17,6 +24,7 @@ export interface ISubmission extends ISubmissionPreview {
     type: string;
     species: string;
     gender: string;
+    uploaded: Date;
 }
 
 export interface IPaginatedResponse<Entry> {
@@ -34,4 +42,5 @@ export interface IJournalPreview {
 
 export interface IJournal extends IJournalPreview {
     content: string;
+    uploaded: Date;
 }
