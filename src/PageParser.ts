@@ -188,7 +188,8 @@ export class PageParser {
                 return;
             }
 
-            const [linkType, linkID] = link.pathname.split('/');
+            // Links always start with a slash
+            const [linkType, linkID] = link.pathname.slice(1).split('/');
             if (!linkType || !linkID) {
                 return;
             }
