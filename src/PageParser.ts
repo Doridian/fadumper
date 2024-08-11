@@ -35,13 +35,13 @@ export class PageParser {
             thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', url),
             title: $('div.submission-title').text().trim(),
             uploader: PageParser.parseUserAnchor($('div.submission-id-sub-container a')),
-            file: new URL(imgElement.attr('data-fullview-src') ?? '', url),
+            imageURL: new URL(imgElement.attr('data-fullview-src') ?? '', url),
             description: PageParser.parseHTMLUserContent($, $('div.submission-description')),
             category: $('span.category-name').first().text().trim(),
             type: $('span.type-name').first().text().trim(),
             species: $('strong.highlight:contains("Species") + span').first().text().trim(),
             gender: $('strong.highlight:contains("Gender") + span').first().text().trim(),
-            uploaded: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
+            createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
     }
 
@@ -50,7 +50,7 @@ export class PageParser {
             title: $('div.journal-title').text().trim(),
             author: PageParser.parseUserAnchor($('userpage-nav-avatar a'), $('h1 username')),
             content: PageParser.parseHTMLUserContent($, $('div.journal-content')),
-            uploaded: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
+            createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
     }
 
@@ -68,9 +68,9 @@ export class PageParser {
         return {
             ...userPreview,
             avatar: avatar ? new URL(avatar, reqUrl) : undefined,
-            profile: PageParser.parseHTMLUserContent($, $('div.userpage-profile')),
-            userType,
-            registered,
+            profileText: PageParser.parseHTMLUserContent($, $('div.userpage-profile')),
+            type: userType,
+            createdAt: registered,
         };
     }
 
@@ -109,7 +109,7 @@ export class PageParser {
         return {
             id: elem.attr('id')?.replace('jid:', '') ?? '',
             title: elem.find('.section-header h2').text().trim(),
-            uploaded: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
+            createdAt: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
             content: PageParser.parseHTMLUserContent($, elem.find('.journal-body')),
         };
     }
