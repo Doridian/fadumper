@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/numeric-separators-style */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-console */
 import { configDotenv } from 'dotenv';
@@ -17,7 +18,7 @@ async function main(): Promise<void> {
     const startUser = process.env.FA_GRAPH_START ?? 'doridian';
 
     const FA = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
-    console.log(await FA.getSubmission(56_893_411));
+    console.log(await FA.getSubmission(56865266));
 
     console.log('Latest submission is', await FA.getMaxSubmissionID());
 

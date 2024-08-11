@@ -32,6 +32,7 @@ export interface ISubmission extends ISubmissionPreview {
     gender: string;
     imageURL: URL;
     createdAt: Date;
+    tags: Set<string>;
 }
 
 export interface IPaginatedResponse<Entry> {

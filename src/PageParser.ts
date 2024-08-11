@@ -41,6 +41,12 @@ export class PageParser {
     public static parseSubmission($: CheerioAPI, reqUrl: URL): Omit<ISubmission, 'id'> {
         const imgElement = $('img#submissionImg');
 
+        const tags = new Set<string>();
+
+        $('section.tags-row span.tags a').each((_, elem) => {
+            tags.add($(elem).text().trim());
+        });
+
         return {
             thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', reqUrl),
             title: $('div.submission-title').text().trim(),
@@ -52,6 +58,7 @@ export class PageParser {
             species: $('strong.highlight:contains("Species") + span').first().text().trim(),
             gender: $('strong.highlight:contains("Gender") + span').first().text().trim(),
             createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
+            tags,
         };
     }
 
