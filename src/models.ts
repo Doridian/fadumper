@@ -2,9 +2,9 @@
 
 export interface IUserTextContent {
     text: string;
-    refersToUsers: Set<IUserPreview>;
-    refersToSubmissions: Set<ISubmissionPreviewMinimal>;
-    refersToJournals: Set<IJournalPreview>;
+    refersToUsers: Set<string>;
+    refersToSubmissions: Set<string>;
+    refersToJournals: Set<string>;
 }
 
 export interface IUserPreview {
@@ -19,11 +19,8 @@ export interface IUser extends IUserPreview {
     createdAt: Date;
 }
 
-export interface ISubmissionPreviewMinimal {
+export interface ISubmissionPreview {
     id: string;
-}
-
-export interface ISubmissionPreview extends ISubmissionPreviewMinimal {
     thumbnail: URL;
     title: string;
     uploader?: IUserPreview;

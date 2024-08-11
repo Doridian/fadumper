@@ -190,13 +190,13 @@ export class PageParser {
                 case 'favorites':
                 case 'commissions':
                 case 'stats':
-                    content.refersToUsers.add({ id: spl[1] ?? '', name: '' });
+                    content.refersToUsers.add(spl[1] ?? '');
                     break;
                 case 'view':
-                    content.refersToSubmissions.add({ id: spl[1] ?? '' });
+                    content.refersToSubmissions.add(spl[1] ?? '');
                     break;
                 case 'journal':
-                    content.refersToJournals.add({ id: spl[1] ?? '' });
+                    content.refersToJournals.add(spl[1] ?? '');
                     break;
                 default:
                     break;
@@ -225,7 +225,7 @@ export class PageParser {
                     if (childCheerio.hasClass('iconusername')) {
                         const hasUsernameSuffix = !!childCheerio.text().trim();
                         const userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio);
-                        content.refersToUsers.add(userPreview);
+                        content.refersToUsers.add(userPreview.id);
                         addToResult(hasUsernameSuffix ? `:icon${userPreview.name}:` : `:${userPreview.name}icon:`);
                         handled = true;
                         break;
@@ -233,7 +233,7 @@ export class PageParser {
 
                     if (childCheerio.hasClass('linkusername')) {
                         const userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio);
-                        content.refersToUsers.add(userPreview);
+                        content.refersToUsers.add(userPreview.id);
                         addToResult(`:link${userPreview.name}:`);
                         handled = true;
                         break;
@@ -334,15 +334,15 @@ export class PageParser {
                             PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("NEXT")')) ?? '-';
 
                         if (prevLink !== '-') {
-                            content.refersToSubmissions.add({ id: prevLink });
+                            content.refersToSubmissions.add(prevLink);
                         }
 
                         if (firstLink !== '-') {
-                            content.refersToSubmissions.add({ id: firstLink });
+                            content.refersToSubmissions.add(firstLink);
                         }
 
                         if (nextLink !== '-') {
-                            content.refersToSubmissions.add({ id: nextLink });
+                            content.refersToSubmissions.add(nextLink);
                         }
 
                         addToResult(`[${prevLink},${firstLink},${nextLink}]`);
