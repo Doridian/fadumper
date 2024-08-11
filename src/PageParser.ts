@@ -116,7 +116,7 @@ export class PageParser {
         };
     }
 
-    public static parseJournalSection($: CheerioAPI, elem: Cheerio<Element>, reqUrl: URL): IJournal {
+    public static parseJournalSection($: CheerioAPI, elem: Cheerio<Element>, reqUrl: URL): Omit<IJournal, 'author'> {
         return {
             id: elem.attr('id')?.replace('jid:', '') ?? '',
             title: elem.find('.section-header h2').text().trim(),
