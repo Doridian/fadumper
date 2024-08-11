@@ -2,9 +2,10 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-console */
 import { configDotenv } from 'dotenv';
-import { Client } from './Client';
-import { RawAPI } from './RawAPI';
-import { IUserPreview } from './models';
+import { Client } from './fa/Client';
+import { DownloadableFile } from './fa/Downloadable';
+import { RawAPI } from './fa/RawAPI';
+import { IUserPreview } from './fa/models';
 
 configDotenv();
 
@@ -15,15 +16,19 @@ async function main(): Promise<void> {
         console.log('Anonymous login');
     }
 
-    const startUser = process.env.FA_GRAPH_START ?? 'doridian';
+    const startUser = process.env.FA_START_USER ?? 'doridian';
 
-    const FA = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
-    console.log(await FA.getSubmission(56865266));
+    const rawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
+    const faClient = new Client(rawAPI);
+    const sub = await faClient.getSubmission(56865266);
+    console.log(sub);
+    const downloadClient = new DownloadableFile(rawAPI, sub.image, process.env.FA_DOWNLOAD_PATH);
+    await downloadClient.download();
 
-    console.log('Latest submission is', await FA.getMaxSubmissionID());
+    console.log('Latest submission is', await faClient.getMaxSubmissionID());
 
     throw new Error('No');
-    const graph = await buildUserGraph(FA, startUser, 2, {
+    const graph = await buildUserGraph(faClient, startUser, 2, {
         scanIncomingWatches: true,
         scanOutgoingWatches: true,
     });
@@ -43,7 +48,7 @@ interface IGraphOptions {
 }
 
 async function buildUserGraph(
-    FA: Client,
+    faClient: Client,
     startUser: string,
     maxDepth: number,
     opt: IGraphOptions,
@@ -52,7 +57,7 @@ async function buildUserGraph(
     const visited = new Set<string>();
 
     let i = 0;
-    for await (const user of FA.getWatching(startUser)) {
+    for await (const user of faClient.getWatching(startUser)) {
         queue.push({ id: user.id, depth: 1, raw: user });
         i++;
     }
@@ -77,7 +82,7 @@ async function buildUserGraph(
         console.log('Checking user', entry.id, 'at depth', entry.depth);
         if (opt.scanOutgoingWatches) {
             i = 0;
-            for await (const user of FA.getWatching(entry.id)) {
+            for await (const user of faClient.getWatching(entry.id)) {
                 queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
                 i++;
             }
@@ -85,7 +90,7 @@ async function buildUserGraph(
         }
         if (opt.scanIncomingWatches) {
             i = 0;
-            for await (const user of FA.getWatchedBy(entry.id)) {
+            for await (const user of faClient.getWatchedBy(entry.id)) {
                 queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
                 i++;
             }
