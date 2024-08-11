@@ -105,6 +105,15 @@ export class PageParser {
         };
     }
 
+    public static parseJournalSection($: CheerioAPI, elem: Cheerio<Element>): IJournal {
+        return {
+            id: elem.attr('id')?.replace('jid:', '') ?? '',
+            title: elem.find('.section-header h2').text().trim(),
+            uploaded: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
+            content: PageParser.parseHTMLUserContent($, elem.find('.journal-body')),
+        };
+    }
+
     private static parsePageUrl(reqUrl: URL, pageHref: string | undefined): number | undefined {
         if (!pageHref) {
             return undefined;
@@ -173,7 +182,7 @@ export class PageParser {
                         break;
                     }
 
-                    if (childCheerio.hasClass('named_url')) {
+                    if (childCheerio.hasClass('named_url') || childCheerio.hasClass('auto_link')) {
                         addToResult(
                             `[url=${childCheerio.attr('href')}]${PageParser.parseHTMLUserContent($, childCheerio)}[/url]`,
                         );
@@ -181,6 +190,9 @@ export class PageParser {
                         break;
                     }
 
+                    break;
+                case 'wbr':
+                    handled = true;
                     break;
                 case 'strong':
                 case 'code':
@@ -241,6 +253,7 @@ export class PageParser {
                             'h4',
                             'h5',
                             'h6',
+                            'spoiler',
                         ]) {
                             if (!childCheerio.hasClass(`bbcode_${tagType}`)) {
                                 continue;
@@ -264,6 +277,21 @@ export class PageParser {
 
                         addToResult(`[${prevLink},${firstLink},${nextLink}]`);
 
+                        handled = true;
+                        break;
+                    }
+
+                    if (childCheerio.hasClass('youtubeWrapper')) {
+                        const videoId = childCheerio.find('iframe').attr('src')?.split('/').pop()?.split('?')[0];
+                        if (videoId) {
+                            addToResult(`[yt]${videoId}[/yt]`);
+                        }
+                        handled = true;
+                        break;
+                    }
+
+                    if (childCheerio.hasClass('smilie')) {
+                        // TODO: Actually handle smilies
                         handled = true;
                         break;
                     }
