@@ -91,8 +91,13 @@ export class Client {
         const url = new URL(`/journals/${userID}/${page}/`, RawAPI.BASE_URL);
         const $ = await this.rawAPI.fetchHTML(url);
 
+        const author = PageParser.parseUserAnchor(url, $('userpage-nav-avatar a'), $('h1 username'));
+
         const items = $('section').map((_, elem) => {
-            return PageParser.parseJournalSection($, $(elem), url);
+            return {
+                ...PageParser.parseJournalSection($, $(elem), url),
+                author,
+            };
         });
 
         return PageParser.enhanceResultWithPagination(items.get(), $, url, 'Older', 'Newer');
