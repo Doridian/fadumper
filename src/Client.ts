@@ -42,6 +42,21 @@ export class Client {
         return this.rawJournalFetchAndParse(userID, page);
     }
 
+    public async getBrowsePage(page = 1): Promise<IPaginatedResponse<ISubmissionPreview[]>> {
+        if (page < 1) {
+            throw new Error('Page must be >= 1');
+        }
+
+        const url = new URL(`/browse/${page}/`, RawAPI.BASE_URL);
+        const $ = await this.rawAPI.fetchHTML(url);
+
+        const items = $('figure').map((_, elem) => {
+            return PageParser.parseSubmissionFigure(url, $(elem));
+        });
+
+        return PageParser.enhanceResultWithPagination(items.get(), $, url, 'Next', 'Back');
+    }
+
     public getWatching(userID: string): AsyncGenerator<IUserPreview, void, void> {
         return Client.autoPaginate(this.getWatchingPage.bind(this), userID);
     }
@@ -62,19 +77,30 @@ export class Client {
         return Client.autoPaginate(this.getJournalsPage.bind(this), userID);
     }
 
-    public async getSubmission(submissionID: string): Promise<ISubmission> {
-        const url = new URL(`/view/${submissionID}/`, RawAPI.BASE_URL);
+    public async getMaxSubmissionID(): Promise<number> {
+        const latestSubmission = await this.getBrowsePage(1);
+        let maxID = -1;
+        for (const submission of latestSubmission.data) {
+            if (submission.id > maxID) {
+                maxID = submission.id;
+            }
+        }
+        return maxID;
+    }
+
+    public async getSubmission(id: number): Promise<ISubmission> {
+        const url = new URL(`/view/${id}/`, RawAPI.BASE_URL);
         return {
             ...PageParser.parseSubmission(await this.rawAPI.fetchHTML(url), url),
-            id: submissionID,
+            id,
         };
     }
 
-    public async getJournal(journalID: string): Promise<IJournal> {
-        const url = new URL(`/journal/${journalID}/`, RawAPI.BASE_URL);
+    public async getJournal(id: number): Promise<IJournal> {
+        const url = new URL(`/journal/${id}/`, RawAPI.BASE_URL);
         return {
             ...PageParser.parseJournal(await this.rawAPI.fetchHTML(url), url),
-            id: journalID,
+            id,
         };
     }
 

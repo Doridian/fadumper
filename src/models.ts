@@ -1,8 +1,8 @@
 export interface IUserTextContent {
     text: string;
     refersToUsers: Set<string>;
-    refersToSubmissions: Set<string>;
-    refersToJournals: Set<string>;
+    refersToSubmissions: Set<number>;
+    refersToJournals: Set<number>;
 }
 
 export interface IUserPreview {
@@ -18,7 +18,7 @@ export interface IUser extends IUserPreview {
 }
 
 export interface ISubmissionPreview {
-    id: string;
+    id: number;
     thumbnail: URL;
     title: string;
     uploader: IUserPreview;
@@ -41,7 +41,7 @@ export interface IPaginatedResponse<Entry> {
 }
 
 export interface IJournal {
-    id: string;
+    id: number;
     author: IUserPreview;
     title: string;
     content: IUserTextContent;

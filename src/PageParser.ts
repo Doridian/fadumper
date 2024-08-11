@@ -109,7 +109,7 @@ export class PageParser {
     public static parseSubmissionFigure(reqUrl: URL, elem: Cheerio<Element>): ISubmissionPreview {
         const figCaption = elem.find('figcaption');
         return {
-            id: PageParser.parseSubmissionAnchor(elem.find('a')) ?? '',
+            id: Number.parseInt(PageParser.parseSubmissionAnchor(elem.find('a')) ?? 'x', 10),
             thumbnail: new URL(elem.find('img').attr('src') ?? '', reqUrl),
             title: figCaption.find('p:first').text().trim(),
             uploader: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a')),
@@ -118,7 +118,7 @@ export class PageParser {
 
     public static parseJournalSection($: CheerioAPI, elem: Cheerio<Element>, reqUrl: URL): Omit<IJournal, 'author'> {
         return {
-            id: elem.attr('id')?.replace('jid:', '') ?? '',
+            id: Number.parseInt(elem.attr('id')?.replace('jid:', '') ?? 'X', 10),
             title: elem.find('.section-header h2').text().trim(),
             createdAt: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
             content: PageParser.parseHTMLUserContent($, elem.find('.journal-body'), reqUrl),
@@ -197,10 +197,10 @@ export class PageParser {
                     content.refersToUsers.add(linkID);
                     break;
                 case 'view':
-                    content.refersToSubmissions.add(linkID);
+                    content.refersToSubmissions.add(Number.parseInt(linkID, 10));
                     break;
                 case 'journal':
-                    content.refersToJournals.add(linkID);
+                    content.refersToJournals.add(Number.parseInt(linkID, 10));
                     break;
                 default:
                     break;
@@ -338,15 +338,15 @@ export class PageParser {
                             PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("NEXT")')) ?? '-';
 
                         if (prevLink !== '-') {
-                            content.refersToSubmissions.add(prevLink);
+                            content.refersToSubmissions.add(Number.parseInt(prevLink, 10));
                         }
 
                         if (firstLink !== '-') {
-                            content.refersToSubmissions.add(firstLink);
+                            content.refersToSubmissions.add(Number.parseInt(firstLink, 10));
                         }
 
                         if (nextLink !== '-') {
-                            content.refersToSubmissions.add(nextLink);
+                            content.refersToSubmissions.add(Number.parseInt(nextLink, 10));
                         }
 
                         addToResult(`[${prevLink},${firstLink},${nextLink}]`);
