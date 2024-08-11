@@ -17,7 +17,9 @@ async function main(): Promise<void> {
     const startUser = process.env.FA_GRAPH_START ?? 'doridian';
 
     const FA = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
-    console.log(await FA.getSubmission('56893411'));
+    console.log(await FA.getSubmission(56_893_411));
+
+    console.log('Latest submission is', await FA.getMaxSubmissionID());
 
     throw new Error('No');
     const graph = await buildUserGraph(FA, startUser, 2, {
