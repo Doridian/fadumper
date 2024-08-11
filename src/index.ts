@@ -17,9 +17,7 @@ async function main(): Promise<void> {
     const startUser = process.env.FA_GRAPH_START ?? 'doridian';
 
     const FA = new Client(new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B));
-    for await (const journal of FA.getJournals('uluri')) {
-        console.log(journal);
-    }
+    console.log(await FA.getSubmission('56893411'));
 
     throw new Error('No');
     const graph = await buildUserGraph(FA, startUser, 2);
