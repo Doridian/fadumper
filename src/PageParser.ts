@@ -45,13 +45,13 @@ export class PageParser {
             thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', reqUrl),
             title: $('div.submission-title').text().trim(),
             uploader: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a')),
-            file: new URL(imgElement.attr('data-fullview-src') ?? '', reqUrl),
+            imageURL: new URL(imgElement.attr('data-fullview-src') ?? '', reqUrl),
             description: PageParser.parseHTMLUserContent($, $('div.submission-description'), reqUrl),
             category: $('span.category-name').first().text().trim(),
             type: $('span.type-name').first().text().trim(),
             species: $('strong.highlight:contains("Species") + span').first().text().trim(),
             gender: $('strong.highlight:contains("Gender") + span').first().text().trim(),
-            uploaded: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
+            createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
     }
 
@@ -60,7 +60,7 @@ export class PageParser {
             title: $('div.journal-title').text().trim(),
             author: PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a'), $('h1 username')),
             content: PageParser.parseHTMLUserContent($, $('div.journal-content'), reqUrl),
-            uploaded: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
+            createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
     }
 
@@ -70,14 +70,14 @@ export class PageParser {
 
         const userTitle = $('username.user-title').text().trim().split('|');
         const userType = userTitle[0]?.trim() ?? '';
-        const registered = PageParser.parseFADate(userTitle[1]?.trim());
+        const createdAt = PageParser.parseFADate(userTitle[1]?.trim());
 
         return {
             ...userPreview,
             avatar: avatar ? new URL(avatar, reqUrl) : undefined,
-            profile: PageParser.parseHTMLUserContent($, $('div.userpage-profile'), reqUrl),
-            userType,
-            registered,
+            description: PageParser.parseHTMLUserContent($, $('div.userpage-profile'), reqUrl),
+            type: userType,
+            createdAt,
         };
     }
 
@@ -120,7 +120,7 @@ export class PageParser {
         return {
             id: elem.attr('id')?.replace('jid:', '') ?? '',
             title: elem.find('.section-header h2').text().trim(),
-            uploaded: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
+            createdAt: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
             content: PageParser.parseHTMLUserContent($, elem.find('.journal-body'), reqUrl),
         };
     }

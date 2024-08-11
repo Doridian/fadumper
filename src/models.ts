@@ -14,9 +14,9 @@ export interface IUserPreview {
 
 export interface IUser extends IUserPreview {
     avatar?: URL;
-    profile: IUserTextContent;
-    userType: string;
-    registered: Date;
+    description: IUserTextContent;
+    type: string;
+    createdAt: Date;
 }
 
 export interface ISubmissionPreviewMinimal {
@@ -30,18 +30,18 @@ export interface ISubmissionPreview extends ISubmissionPreviewMinimal {
 }
 
 export interface ISubmission extends ISubmissionPreview {
-    file: URL;
     description: IUserTextContent;
     category: string;
     type: string;
     species: string;
     gender: string;
-    uploaded: Date;
+    imageURL: URL;
+    createdAt: Date;
 }
 
 export interface IPaginatedResponse<Entry> {
-    nextPage: number | undefined;
-    prevPage: number | undefined;
+    nextPage?: number;
+    prevPage?: number;
     data: Entry;
 }
 
@@ -53,5 +53,5 @@ export interface IJournal extends IJournalPreview {
     author?: IUserPreview;
     title: string;
     content: IUserTextContent;
-    uploaded: Date;
+    createdAt: Date;
 }
