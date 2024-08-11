@@ -73,7 +73,7 @@ export class Client {
     public async getJournal(journalID: string): Promise<IJournal> {
         const url = new URL(`/journal/${journalID}/`, RawAPI.BASE_URL);
         return {
-            ...PageParser.parseJournal(await this.rawAPI.fetchHTML(url)),
+            ...PageParser.parseJournal(await this.rawAPI.fetchHTML(url), url),
             id: journalID,
         };
     }
@@ -92,7 +92,7 @@ export class Client {
         const $ = await this.rawAPI.fetchHTML(url);
 
         const items = $('section').map((_, elem) => {
-            return PageParser.parseJournalSection($, $(elem));
+            return PageParser.parseJournalSection($, $(elem), url);
         });
 
         return PageParser.enhanceResultWithPagination(items.get(), $, url, 'Older', 'Newer');
@@ -130,7 +130,7 @@ export class Client {
 
         const $ = await this.rawAPI.fetchHTML(url);
         const items = $('div.watch-list-items a').map((_, elem) => {
-            return PageParser.parseUserAnchor($(elem));
+            return PageParser.parseUserAnchor(url, $(elem));
         });
 
         return PageParser.enhanceResultWithPagination(items.get(), $, url, 'Next ', 'Back ');

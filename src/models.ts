@@ -1,3 +1,12 @@
+/* eslint-disable import/no-unused-modules */
+
+export interface IUserTextContent {
+    text: string;
+    refersToUsers: Set<IUserPreview>;
+    refersToSubmissions: Set<ISubmissionPreviewMinimal>;
+    refersToJournals: Set<IJournalPreview>;
+}
+
 export interface IUserPreview {
     id: string;
     name: string;
@@ -5,13 +14,16 @@ export interface IUserPreview {
 
 export interface IUser extends IUserPreview {
     avatar?: URL;
-    profile: string;
+    profile: IUserTextContent;
     userType: string;
     registered: Date;
 }
 
-export interface ISubmissionPreview {
+export interface ISubmissionPreviewMinimal {
     id: string;
+}
+
+export interface ISubmissionPreview extends ISubmissionPreviewMinimal {
     thumbnail: URL;
     title: string;
     uploader?: IUserPreview;
@@ -19,7 +31,7 @@ export interface ISubmissionPreview {
 
 export interface ISubmission extends ISubmissionPreview {
     file: URL;
-    description: string;
+    description: IUserTextContent;
     category: string;
     type: string;
     species: string;
@@ -33,10 +45,13 @@ export interface IPaginatedResponse<Entry> {
     data: Entry;
 }
 
-export interface IJournal {
+export interface IJournalPreview {
     id: string;
+}
+
+export interface IJournal extends IJournalPreview {
     author?: IUserPreview;
     title: string;
-    content: string;
+    content: IUserTextContent;
     uploaded: Date;
 }
