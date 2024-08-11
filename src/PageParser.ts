@@ -181,8 +181,12 @@ export class PageParser {
                 return;
             }
 
-            const spl = link.pathname.split('/');
-            switch (spl[0]) {
+            const [linkType, linkID] = link.pathname.split('/');
+            if (!linkType || !linkID) {
+                return;
+            }
+
+            switch (linkType) {
                 case 'user':
                 case 'gallery':
                 case 'scraps':
@@ -190,13 +194,13 @@ export class PageParser {
                 case 'favorites':
                 case 'commissions':
                 case 'stats':
-                    content.refersToUsers.add(spl[1] ?? '');
+                    content.refersToUsers.add(linkID);
                     break;
                 case 'view':
-                    content.refersToSubmissions.add(spl[1] ?? '');
+                    content.refersToSubmissions.add(linkID);
                     break;
                 case 'journal':
-                    content.refersToJournals.add(spl[1] ?? '');
+                    content.refersToJournals.add(linkID);
                     break;
                 default:
                     break;
