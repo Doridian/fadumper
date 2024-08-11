@@ -68,7 +68,7 @@ export class PageParser {
         return {
             ...userPreview,
             avatar: avatar ? new URL(avatar, reqUrl) : undefined,
-            profileText: PageParser.parseHTMLUserContent($, $('div.userpage-profile')),
+            description: PageParser.parseHTMLUserContent($, $('div.userpage-profile')),
             type: userType,
             createdAt: registered,
         };

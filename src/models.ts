@@ -5,7 +5,7 @@ export interface IUserPreview {
 
 export interface IUser extends IUserPreview {
     avatar?: URL;
-    profileText: string;
+    description: string;
     type: string;
     createdAt: Date;
 }
