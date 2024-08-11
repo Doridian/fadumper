@@ -41,7 +41,7 @@ export class PageParser {
             type: $('span.type-name').first().text().trim(),
             species: $('strong.highlight:contains("Species") + span').first().text().trim(),
             gender: $('strong.highlight:contains("Gender") + span').first().text().trim(),
-            uploaded: new Date($('span.popup_date').first().attr('title')?.trim() ?? ''), // TODO: Timezone?
+            uploaded: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
     }
 
@@ -50,7 +50,7 @@ export class PageParser {
             title: $('div.journal-title').text().trim(),
             author: PageParser.parseUserAnchor($('userpage-nav-avatar a'), $('h1 username')),
             content: PageParser.parseHTMLUserContent($, $('div.journal-content')),
-            uploaded: new Date($('span.popup_date').first().attr('title')?.trim() ?? ''), // TODO: Timezone?
+            uploaded: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
     }
 
@@ -63,7 +63,7 @@ export class PageParser {
 
         const userTitle = $('username.user-title').text().trim().split('|');
         const userType = userTitle[0]?.trim() ?? '';
-        const registered = new Date(userTitle[1]?.trim() ?? ''); // TODO: Timezone?
+        const registered = PageParser.parseFADate(userTitle[1]?.trim());
 
         return {
             ...userPreview,
@@ -122,6 +122,13 @@ export class PageParser {
 
     private static normalizedPath(url: URL): string {
         return url.pathname.replace(PageParser.STRIP_TRAILING_SLASHES, '');
+    }
+
+    private static parseFADate(date: string | undefined): Date {
+        if (!date) {
+            throw new Error('No date provided');
+        }
+        return new Date(date); // TODO: Timezone?
     }
 
     private static parseHTMLUserContent($: CheerioAPI, elem: Cheerio<Element>): string {
