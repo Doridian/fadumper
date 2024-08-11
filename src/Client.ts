@@ -38,7 +38,7 @@ export class Client {
         return this.rawGalleryFetchAndParse(userID, 'scraps', page);
     }
 
-    public async getJournalPage(userID: string, page = 1): Promise<IPaginatedResponse<IJournal[]>> {
+    public async getJournalsPage(userID: string, page = 1): Promise<IPaginatedResponse<IJournal[]>> {
         return this.rawJournalFetchAndParse(userID, page);
     }
 
@@ -59,7 +59,7 @@ export class Client {
     }
 
     public getJournals(userID: string): AsyncGenerator<IJournal, void, void> {
-        return Client.autoPaginate(this.getJournalPage.bind(this), userID);
+        return Client.autoPaginate(this.getJournalsPage.bind(this), userID);
     }
 
     public async getSubmission(submissionID: string): Promise<ISubmission> {
