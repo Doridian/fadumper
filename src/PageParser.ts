@@ -184,6 +184,12 @@ export class PageParser {
             const spl = link.pathname.split('/');
             switch (spl[0]) {
                 case 'user':
+                case 'gallery':
+                case 'scraps':
+                case 'journals':
+                case 'favorites':
+                case 'commissions':
+                case 'stats':
                     content.refersToUsers.add({ id: spl[1] ?? '', name: '' });
                     break;
                 case 'view':
