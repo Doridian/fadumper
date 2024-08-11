@@ -1,5 +1,3 @@
-/* eslint-disable import/no-unused-modules */
-
 export interface IUserTextContent {
     text: string;
     refersToUsers: Set<string>;
@@ -42,11 +40,8 @@ export interface IPaginatedResponse<Entry> {
     data: Entry;
 }
 
-export interface IJournalPreview {
+export interface IJournal {
     id: string;
-}
-
-export interface IJournal extends IJournalPreview {
     author?: IUserPreview;
     title: string;
     content: IUserTextContent;
