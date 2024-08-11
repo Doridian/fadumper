@@ -3,7 +3,17 @@
 import { Cheerio, CheerioAPI } from 'cheerio';
 import { ElementType } from 'domelementtype';
 import { Element } from 'domhandler';
-import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUser, IUserPreview } from './models';
+import {
+    IJournal,
+    IPaginatedResponse,
+    ISubmission,
+    ISubmissionPreview,
+    IUser,
+    IUserPreview,
+    IUserTextContent,
+} from './models';
+
+const isFurAffinityUrl = (url: URL): boolean => url.host === 'www.furaffinity.net' || url.host === 'furaffinity.net';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class PageParser {
@@ -28,15 +38,15 @@ export class PageParser {
         };
     }
 
-    public static parseSubmission($: CheerioAPI, url: URL): Omit<ISubmission, 'id'> {
+    public static parseSubmission($: CheerioAPI, reqUrl: URL): Omit<ISubmission, 'id'> {
         const imgElement = $('img#submissionImg');
 
         return {
-            thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', url),
+            thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', reqUrl),
             title: $('div.submission-title').text().trim(),
-            uploader: PageParser.parseUserAnchor($('div.submission-id-sub-container a')),
-            imageURL: new URL(imgElement.attr('data-fullview-src') ?? '', url),
-            description: PageParser.parseHTMLUserContent($, $('div.submission-description')),
+            uploader: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a')),
+            imageURL: new URL(imgElement.attr('data-fullview-src') ?? '', reqUrl),
+            description: PageParser.parseHTMLUserContent($, $('div.submission-description'), reqUrl),
             category: $('span.category-name').first().text().trim(),
             type: $('span.type-name').first().text().trim(),
             species: $('strong.highlight:contains("Species") + span').first().text().trim(),
@@ -45,42 +55,43 @@ export class PageParser {
         };
     }
 
-    public static parseJournal($: CheerioAPI): Omit<IJournal, 'id'> {
+    public static parseJournal($: CheerioAPI, reqUrl: URL): Omit<IJournal, 'id'> {
         return {
             title: $('div.journal-title').text().trim(),
-            author: PageParser.parseUserAnchor($('userpage-nav-avatar a'), $('h1 username')),
-            content: PageParser.parseHTMLUserContent($, $('div.journal-content')),
+            author: PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a'), $('h1 username')),
+            content: PageParser.parseHTMLUserContent($, $('div.journal-content'), reqUrl),
             createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
     }
 
     public static parsesUserPage($: CheerioAPI, reqUrl: URL): IUser {
         const avatar = $('userpage-nav-avatar img').attr('src');
-        const userPreview = PageParser.parseUserAnchor($('userpage-nav-avatar a'), $('h1 username'));
-        if (!userPreview) {
-            throw new Error(`Could not parse user preview for user page at ${reqUrl.href}`);
-        }
+        const userPreview = PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a'), $('h1 username'));
 
         const userTitle = $('username.user-title').text().trim().split('|');
         const userType = userTitle[0]?.trim() ?? '';
-        const registered = PageParser.parseFADate(userTitle[1]?.trim());
+        const createdAt = PageParser.parseFADate(userTitle[1]?.trim());
 
         return {
             ...userPreview,
             avatar: avatar ? new URL(avatar, reqUrl) : undefined,
-            description: PageParser.parseHTMLUserContent($, $('div.userpage-profile')),
+            description: PageParser.parseHTMLUserContent($, $('div.userpage-profile'), reqUrl),
             type: userType,
-            createdAt: registered,
+            createdAt,
         };
     }
 
-    public static parseUserAnchor(elem: Cheerio<Element>, nameElem?: Cheerio<Element>): IUserPreview | undefined {
-        const id = PageParser.USER_ID_REGEX.exec(elem.attr('href') ?? '')?.[1];
+    public static parseUserAnchor(reqUrl: URL, elem: Cheerio<Element>, nameElem?: Cheerio<Element>): IUserPreview {
+        const id = PageParser.USER_ID_REGEX.exec(new URL(elem.attr('href') ?? '', reqUrl).pathname)?.[1];
         if (!id) {
-            return undefined;
+            throw new Error('Could not parse user anchor');
         }
 
-        let name = (nameElem ?? elem).text().trim();
+        let name = (nameElem ?? elem).text();
+        if (!name) {
+            name = (nameElem ?? elem).find('img').attr('alt') ?? '';
+        }
+        name = name.trim();
         if (/\W/.test(name)) {
             name = name.slice(1);
         }
@@ -101,16 +112,16 @@ export class PageParser {
             id: PageParser.parseSubmissionAnchor(elem.find('a')) ?? '',
             thumbnail: new URL(elem.find('img').attr('src') ?? '', reqUrl),
             title: figCaption.find('p:first').text().trim(),
-            uploader: PageParser.parseUserAnchor(figCaption.find('p:last a')),
+            uploader: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a')),
         };
     }
 
-    public static parseJournalSection($: CheerioAPI, elem: Cheerio<Element>): IJournal {
+    public static parseJournalSection($: CheerioAPI, elem: Cheerio<Element>, reqUrl: URL): IJournal {
         return {
             id: elem.attr('id')?.replace('jid:', '') ?? '',
             title: elem.find('.section-header h2').text().trim(),
             createdAt: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
-            content: PageParser.parseHTMLUserContent($, elem.find('.journal-body')),
+            content: PageParser.parseHTMLUserContent($, elem.find('.journal-body'), reqUrl),
         };
     }
 
@@ -140,12 +151,56 @@ export class PageParser {
         return new Date(date); // TODO: Timezone?
     }
 
-    private static parseHTMLUserContent($: CheerioAPI, elem: Cheerio<Element>): string {
-        let result = '';
+    private static parseHTMLUserContent($: CheerioAPI, elem: Cheerio<Element>, reqUrl: URL): IUserTextContent {
+        const content: IUserTextContent = {
+            text: '',
+            refersToUsers: new Set(),
+            refersToSubmissions: new Set(),
+            refersToJournals: new Set(),
+        };
+        PageParser.parseHTMLUserContentInner($, elem, reqUrl, content);
+        return content;
+    }
+
+    private static parseHTMLUserContentInner(
+        $: CheerioAPI,
+        elem: Cheerio<Element>,
+        reqUrl: URL,
+        content: IUserTextContent,
+    ): void {
         const addToResult = (str: string) => {
             const endsWithSpace = str.endsWith(' ');
-            result +=
-                (!result.endsWith(' ') && str.startsWith(' ') ? ' ' : '') + str.trim() + (endsWithSpace ? ' ' : '');
+            content.text +=
+                (!content.text.endsWith(' ') && str.startsWith(' ') ? ' ' : '') +
+                str.trim() +
+                (endsWithSpace ? ' ' : '');
+        };
+
+        const checkLinkToAdd = (link: URL) => {
+            if (!isFurAffinityUrl(link)) {
+                return;
+            }
+
+            const spl = link.pathname.split('/');
+            switch (spl[0]) {
+                case 'user':
+                case 'gallery':
+                case 'scraps':
+                case 'journals':
+                case 'favorites':
+                case 'commissions':
+                case 'stats':
+                    content.refersToUsers.add(spl[1] ?? '');
+                    break;
+                case 'view':
+                    content.refersToSubmissions.add(spl[1] ?? '');
+                    break;
+                case 'journal':
+                    content.refersToJournals.add(spl[1] ?? '');
+                    break;
+                default:
+                    break;
+            }
         };
 
         for (const child of elem.contents()) {
@@ -163,29 +218,32 @@ export class PageParser {
 
             switch (child.tagName.toLowerCase()) {
                 case 'br':
-                    result += '\n'; // Do not call addToResult as this never gets whitespaces
+                    content.text += '\n'; // Do not call addToResult as this never gets whitespaces
                     handled = true;
                     break;
                 case 'a':
                     if (childCheerio.hasClass('iconusername')) {
                         const hasUsernameSuffix = !!childCheerio.text().trim();
-                        const userPreview = PageParser.parseUserAnchor(childCheerio);
-                        addToResult(hasUsernameSuffix ? `:icon${userPreview?.name}:` : `:${userPreview?.name}icon:`);
+                        const userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio);
+                        content.refersToUsers.add(userPreview.id);
+                        addToResult(hasUsernameSuffix ? `:icon${userPreview.name}:` : `:${userPreview.name}icon:`);
                         handled = true;
                         break;
                     }
 
                     if (childCheerio.hasClass('linkusername')) {
-                        const userPreview = PageParser.parseUserAnchor(childCheerio);
-                        addToResult(`:link${userPreview?.name}:`);
+                        const userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio);
+                        content.refersToUsers.add(userPreview.id);
+                        addToResult(`:link${userPreview.name}:`);
                         handled = true;
                         break;
                     }
 
                     if (childCheerio.hasClass('named_url') || childCheerio.hasClass('auto_link')) {
-                        addToResult(
-                            `[url=${childCheerio.attr('href')}]${PageParser.parseHTMLUserContent($, childCheerio)}[/url]`,
-                        );
+                        addToResult(`[url=${childCheerio.attr('href')}]`);
+                        checkLinkToAdd(new URL(childCheerio.attr('href') ?? '', reqUrl));
+                        PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
+                        addToResult('[/url]');
                         handled = true;
                         break;
                     }
@@ -214,9 +272,7 @@ export class PageParser {
                     if (childCheerio.hasClass('bbcode')) {
                         const style = childCheerio.css('color');
                         if (style) {
-                            addToResult(`[color=${style}]${PageParser.parseHTMLUserContent($, childCheerio)}[/color]`);
-                            handled = true;
-                            break;
+                            addToResult(`[color=${style}]`);
                         }
 
                         if (childCheerio.hasClass('bbcode_quote')) {
@@ -227,12 +283,12 @@ export class PageParser {
                             }
                             nameEle.remove();
                             if (authorName) {
-                                addToResult(
-                                    `[quote=${authorName}]${PageParser.parseHTMLUserContent($, childCheerio)}[/quote]`,
-                                );
+                                addToResult(`[quote=${authorName}]`);
                             } else {
-                                addToResult(`[quote]${PageParser.parseHTMLUserContent($, childCheerio)}[/quote]`);
+                                addToResult('[quote]');
                             }
+                            PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
+                            addToResult('[/quote]');
                             handled = true;
                             break;
                         }
@@ -259,7 +315,9 @@ export class PageParser {
                                 continue;
                             }
 
-                            addToResult(`[${tagType}]${PageParser.parseHTMLUserContent($, childCheerio)}[/${tagType}]`);
+                            addToResult(`[${tagType}]`);
+                            PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
+                            addToResult(`[/${tagType}]`);
                             handled = true;
                             break;
                         }
@@ -274,6 +332,18 @@ export class PageParser {
                             PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("FIRST")')) ?? '-';
                         const nextLink =
                             PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("NEXT")')) ?? '-';
+
+                        if (prevLink !== '-') {
+                            content.refersToSubmissions.add(prevLink);
+                        }
+
+                        if (firstLink !== '-') {
+                            content.refersToSubmissions.add(firstLink);
+                        }
+
+                        if (nextLink !== '-') {
+                            content.refersToSubmissions.add(nextLink);
+                        }
 
                         addToResult(`[${prevLink},${firstLink},${nextLink}]`);
 
@@ -298,7 +368,7 @@ export class PageParser {
 
                     break;
                 case 'hr':
-                    result += '\n-----\n';
+                    content.text += '\n-----\n';
                     handled = true;
                     break;
             }
@@ -310,6 +380,6 @@ export class PageParser {
             throw new Error(`Unhandled element: ${childCheerio.toString()}`);
         }
 
-        return result.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_POST, '$1').trim();
+        content.text = content.text.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_POST, '$1').trim();
     }
 }

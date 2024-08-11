@@ -20,7 +20,10 @@ async function main(): Promise<void> {
     console.log(await FA.getSubmission('56893411'));
 
     throw new Error('No');
-    const graph = await buildUserGraph(FA, startUser, 2);
+    const graph = await buildUserGraph(FA, startUser, 2, {
+        scanIncomingWatches: true,
+        scanOutgoingWatches: true,
+    });
     console.log(graph);
     console.log(graph.size);
 }
@@ -31,7 +34,17 @@ interface IUserGraphQueueEntry {
     depth: number;
 }
 
-async function buildUserGraph(FA: Client, startUser: string, maxDepth: number): Promise<Set<string>> {
+interface IGraphOptions {
+    scanIncomingWatches: boolean;
+    scanOutgoingWatches: boolean;
+}
+
+async function buildUserGraph(
+    FA: Client,
+    startUser: string,
+    maxDepth: number,
+    opt: IGraphOptions,
+): Promise<Set<string>> {
     const queue: IUserGraphQueueEntry[] = [];
     const visited = new Set<string>();
 
@@ -54,22 +67,27 @@ async function buildUserGraph(FA: Client, startUser: string, maxDepth: number): 
 
         visited.add(entry.id);
 
-        const g = await FA.galleryPage(entry.id);
-        for (const submissionPreview of g.data) {
-            console.log('Sub', await FA.getSubmission(submissionPreview.id));
-        }
-
         if (entry.depth >= maxDepth) {
             continue;
         }
 
         console.log('Checking user', entry.id, 'at depth', entry.depth);
-        i = 0;
-        for await (const user of FA.getWatching(entry.id)) {
-            queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
-            i++;
+        if (opt.scanOutgoingWatches) {
+            i = 0;
+            for await (const user of FA.getWatching(entry.id)) {
+                queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
+                i++;
+            }
+            console.log(`User ${entry.id} is watching ${i} users`);
         }
-        console.log(`User ${entry.id} is watching ${i} users`);
+        if (opt.scanIncomingWatches) {
+            i = 0;
+            for await (const user of FA.getWatchedBy(entry.id)) {
+                queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
+                i++;
+            }
+            console.log(`User ${entry.id} is watched by ${i} users`);
+        }
     }
 
     return visited;
