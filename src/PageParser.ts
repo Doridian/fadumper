@@ -3,7 +3,7 @@
 import { Cheerio, CheerioAPI } from 'cheerio';
 import { ElementType } from 'domelementtype';
 import { Element } from 'domhandler';
-import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUserPreview } from './models';
+import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUser, IUserPreview } from './models';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class PageParser {
@@ -41,26 +41,53 @@ export class PageParser {
             type: $('span.type-name').first().text().trim(),
             species: $('strong.highlight:contains("Species") + span').first().text().trim(),
             gender: $('strong.highlight:contains("Gender") + span').first().text().trim(),
+            uploaded: new Date($('span.popup_date').first().attr('title')?.trim() ?? ''), // TODO: Timezone?
         };
     }
 
     public static parseJournal($: CheerioAPI): Omit<IJournal, 'id'> {
         return {
             title: $('div.journal-title').text().trim(),
-            author: PageParser.parseUserAnchor($('userpage-nav-avatar a')),
+            author: PageParser.parseUserAnchor($('userpage-nav-avatar a'), $('h1 username')),
             content: PageParser.parseHTMLUserContent($, $('div.journal-content')),
+            uploaded: new Date($('span.popup_date').first().attr('title')?.trim() ?? ''), // TODO: Timezone?
         };
     }
 
-    public static parseUserAnchor(elem: Cheerio<Element>): IUserPreview | undefined {
+    public static parsesUserPage($: CheerioAPI, reqUrl: URL): IUser {
+        const avatar = $('userpage-nav-avatar img').attr('src');
+        const userPreview = PageParser.parseUserAnchor($('userpage-nav-avatar a'), $('h1 username'));
+        if (!userPreview) {
+            throw new Error(`Could not parse user preview for user page at ${reqUrl.href}`);
+        }
+
+        const userTitle = $('username.user-title').text().trim().split('|');
+        const userType = userTitle[0]?.trim() ?? '';
+        const registered = new Date(userTitle[1]?.trim() ?? ''); // TODO: Timezone?
+
+        return {
+            ...userPreview,
+            avatar: avatar ? new URL(avatar, reqUrl) : undefined,
+            profile: PageParser.parseHTMLUserContent($, $('div.userpage-profile')),
+            userType,
+            registered,
+        };
+    }
+
+    public static parseUserAnchor(elem: Cheerio<Element>, nameElem?: Cheerio<Element>): IUserPreview | undefined {
         const id = PageParser.USER_ID_REGEX.exec(elem.attr('href') ?? '')?.[1];
         if (!id) {
             return undefined;
         }
 
+        let name = (nameElem ?? elem).text().trim();
+        if (/\W/.test(name)) {
+            name = name.slice(1);
+        }
+
         return {
             id,
-            name: elem.text().trim(),
+            name,
         };
     }
 
@@ -157,6 +184,14 @@ export class PageParser {
                 case 'b':
                 case 's':
                 case 'i':
+                case 'h1':
+                case 'h2':
+                case 'h3':
+                case 'h4':
+                case 'h5':
+                case 'h6':
+                case 'p':
+                case 'div':
                     if (childCheerio.hasClass('bbcode')) {
                         const style = childCheerio.css('color');
                         if (style) {
@@ -183,7 +218,23 @@ export class PageParser {
                             break;
                         }
 
-                        for (const tagType of ['b', 'i', 'u', 's', 'sup', 'sub', 'center', 'right', 'left']) {
+                        for (const tagType of [
+                            'b',
+                            'i',
+                            'u',
+                            's',
+                            'sup',
+                            'sub',
+                            'center',
+                            'right',
+                            'left',
+                            'h1',
+                            'h2',
+                            'h3',
+                            'h4',
+                            'h5',
+                            'h6',
+                        ]) {
                             if (!childCheerio.hasClass(`bbcode_${tagType}`)) {
                                 continue;
                             }
