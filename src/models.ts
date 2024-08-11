@@ -5,9 +5,9 @@ export interface IUserPreview {
 
 export interface IUser extends IUserPreview {
     avatar?: URL;
-    profile: string;
-    userType: string;
-    registered: Date;
+    description: string;
+    type: string;
+    createdAt: Date;
 }
 
 export interface ISubmissionPreview {
@@ -18,18 +18,18 @@ export interface ISubmissionPreview {
 }
 
 export interface ISubmission extends ISubmissionPreview {
-    file: URL;
     description: string;
     category: string;
     type: string;
     species: string;
     gender: string;
-    uploaded: Date;
+    imageURL: URL;
+    createdAt: Date;
 }
 
 export interface IPaginatedResponse<Entry> {
-    nextPage: number | undefined;
-    prevPage: number | undefined;
+    nextPage?: number;
+    prevPage?: number;
     data: Entry;
 }
 
@@ -38,5 +38,5 @@ export interface IJournal {
     author?: IUserPreview;
     title: string;
     content: string;
-    uploaded: Date;
+    createdAt: Date;
 }
