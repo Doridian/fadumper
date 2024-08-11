@@ -1,5 +1,5 @@
 /dist
-/pendant.tar.gz
+/downloads
 node_modules
 .eslintcache
 .env

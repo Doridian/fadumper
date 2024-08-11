@@ -51,7 +51,7 @@ export class PageParser {
             thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', reqUrl),
             title: $('div.submission-title').text().trim(),
             uploader: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a')),
-            imageURL: new URL(imgElement.attr('data-fullview-src') ?? '', reqUrl),
+            image: new URL(imgElement.attr('data-fullview-src') ?? '', reqUrl),
             description: PageParser.parseHTMLUserContent($, $('div.submission-description'), reqUrl),
             category: $('span.category-name').first().text().trim(),
             type: $('span.type-name').first().text().trim(),
