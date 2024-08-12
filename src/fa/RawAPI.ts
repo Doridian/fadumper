@@ -2,7 +2,7 @@ import { createWriteStream, PathLike } from 'node:fs';
 import { WritableStream } from 'node:stream/web';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 
-class HttpError extends Error {
+export class HttpError extends Error {
     public constructor(
         public readonly status: number,
         public readonly url: URL,
@@ -12,9 +12,9 @@ class HttpError extends Error {
     }
 }
 
-class FASystemError extends Error {
-    public constructor(msg: string) {
-        super(`System error: ${msg}`);
+export class FASystemError extends Error {
+    public constructor(public readonly faMessage: string) {
+        super(`System error: ${faMessage}`);
         this.name = 'FASystemError';
     }
 }

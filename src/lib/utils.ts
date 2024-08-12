@@ -1,53 +1,33 @@
-import { mkdirSync } from 'node:fs';
-import path from 'node:path';
+/* eslint-disable no-console */
+import { SearchTotalHits } from '@elastic/elasticsearch/lib/api/types';
+import { DownloadableFile } from '../fa/Downloadable';
+import { HttpError } from '../fa/RawAPI';
 
-const madeDirs = new Set();
+export function getNumericValue(val: SearchTotalHits | number | undefined): number {
+    if (val === undefined) {
+        return 0;
+    }
 
-export function mkdirpFor(file: string) {
-    const dir = dirname(file);
-    mkdirp(dir);
-    return dir;
+    if (typeof val === 'number') {
+        return val;
+    }
+
+    return val.value;
 }
 
-export function mkdirp(raw_dir: string) {
-    if (madeDirs.has(raw_dir)) {
-        return;
-    }
-    const dir = normalize(raw_dir);
-    if (madeDirs.has(dir)) {
-        return;
-    }
+export enum DownloadResult {
+    OK,
+    DELETED,
+}
 
+export async function downloadOne(dl: DownloadableFile): Promise<DownloadResult> {
     try {
-        mkdirSync(dir);
+        await dl.download();
+        return DownloadResult.OK;
     } catch (error) {
-        switch ((error as any).code) {
-            case 'ENOENT':
-                mkdirp(dirname(dir));
-                mkdirSync(dir);
-                break;
-            case 'EEXIST':
-                break;
-            default:
-                throw error;
+        if (error instanceof HttpError && (error.status === 404 || error.status === 403)) {
+            return DownloadResult.DELETED;
         }
+        throw error;
     }
-
-    madeDirs.add(raw_dir);
-    madeDirs.add(dir);
-}
-
-export function getNumericValue(val: any): number {
-    if (val.value !== undefined) {
-        return val.value as number;
-    }
-    return val as number;
-}
-
-export function pathFixer(path: string) {
-    path = normalize(path);
-    if (path.startsWith('.') || path.startsWith('/')) {
-        path = `_${path}`;
-    }
-    return path;
 }

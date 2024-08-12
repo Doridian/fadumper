@@ -1,68 +1,56 @@
-import { createWriteStream } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
-import { IncomingMessage } from 'node:http';
-import { Agent, request } from 'node:https';
-import { EventEmitter } from 'node:stream';
-import { Client } from '@elastic/elasticsearch';
+/* eslint-disable no-console */
+import { Client as ESClient } from '@elastic/elasticsearch';
 import { BulkOperationContainer, BulkUpdateAction, SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import { ArgumentParser } from 'argparse';
-import { getNumericValue, mkdirpFor, pathFixer } from '../lib/utils';
+import { ESItem, IDBDownloadable, IDBSubmission, IDBUser } from '../db/models';
+import { DownloadableFile } from '../fa/Downloadable';
+import { RawAPI } from '../fa/RawAPI';
+import { downloadOne, DownloadResult, getNumericValue } from '../lib/utils';
 
 const argParse = new ArgumentParser({
     description: 'FA downloadfiles',
 });
-argParse.add_argument('-t', '--type');
+argParse.add_argument('-t', '--type', { default: 'submission' });
 argParse.add_argument('-l', '--looper', { action: 'store_true' });
-const ARGS = argParse.parse_args() as { type: string; looper: boolean };
+const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean };
 
 configureDotenv();
 
 interface QueueEntry {
-    url?: string;
-    size: number;
-    id: string;
-    downloaded: boolean;
-    deleted: boolean;
-    dest: string;
+    downloads: DownloadableFile[];
+    item: ESItem<IDBDownloadable>;
 }
 
-type ESBulkType = BulkOperationContainer | BulkUpdateAction<ESPost, Partial<ESPost>>;
+type ESBulkType = BulkOperationContainer | BulkUpdateAction;
 
 const queue: QueueEntry[] = [];
 let esQueue: ESBulkType[] = [];
 let doneCount = 0;
 let errorCount = 0;
 let foundCount = 0;
-let listCount = 0;
 let skippedCount = 0;
 let successCount = 0;
 let totalCount = 0;
 
-const agent = new Agent({ keepAlive: true });
-
-const DOWNLOAD_KIND = ARGS.type;
-const DEST_FOLDER = process.env.FA_DOWNLOAD_PATH;
 const MAX_PARALLEL = 1;
 const ES_BATCH_SIZE = 1000;
 
 const EXIT_ERROR_IF_FOUND = !!ARGS.looper;
 
-const DOWNLOADED_KEY: FileDownloadedKeys = `${DOWNLOAD_KIND}_downloaded` as FileDownloadedKeys;
-const DELETED_KEY: FileDeletedKeys = `${DOWNLOAD_KIND}_deleted` as FileDeletedKeys;
-const URL_KEY: FileURLKeys = `${DOWNLOAD_KIND}_url` as FileURLKeys;
-const SIZE_KEY: FileSizeKeys = `${DOWNLOAD_KIND}_size` as FileSizeKeys;
-
 let inProgress = 0;
 let esDone = false;
 
-const client = new Client(config.elasticsearch);
+const client = new ESClient({
+    node: process.env.ES_URL,
+});
 
-const mustNot = [{ term: { [DELETED_KEY]: true } }, { term: { [DOWNLOADED_KEY]: true } }];
+const faRawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
+
+const mustNot = [{ term: { downloaded: true } }, { term: { deleted: true } }];
 
 const RES_SKIP = 'skipped';
 
 const gotFiles = new Set<string>();
-const listedFiles = new Map<string, Set<string>>();
 
 function setHadErrors() {
     process.exitCode = 1;
@@ -82,8 +70,6 @@ function printStats() {
         errorCount,
         'Skipped:',
         skippedCount,
-        'DirList:',
-        listCount,
         'Percent:',
         Math.floor((doneCount / totalCount) * 100),
     );
@@ -110,7 +96,14 @@ async function esRunBatchUpdate(min: number) {
     }
 }
 
-let batcherInterval: NodeJS.Timeout | undefined = setInterval(async () => esRunBatchUpdate(ES_BATCH_SIZE_2), 1000);
+function handleError(error: Error) {
+    console.error('Error', error);
+    setHadErrors();
+}
+
+let batcherInterval: NodeJS.Timeout | undefined = setInterval(() => {
+    esRunBatchUpdate(ES_BATCH_SIZE_2).catch(handleError);
+}, 1000);
 
 async function checkEnd() {
     if (queue.length > 0 || inProgress > 0 || !esDone) {
@@ -130,58 +123,44 @@ async function checkEnd() {
     await esRunBatchUpdate(1);
 }
 
-async function addURL(item: ESItem) {
-    const url = item._source[URL_KEY];
-
-    const file: QueueEntry = {
-        url,
-        size: item._source[SIZE_KEY] || 0,
-        id: item._id,
-        downloaded: item._source[DOWNLOADED_KEY],
-        deleted: item._source[DELETED_KEY],
-        dest: url ? DEST_FOLDER + pathFixer(url.replace(/^https?:\/\//, '')) : '',
-    };
-
-    if (!file.dest || gotFiles.has(file.dest)) {
-        inProgress++;
-        await downloadDone(file, RES_SKIP);
-        return;
-    }
-    gotFiles.add(file.dest);
-
-    const dir = mkdirpFor(file.dest);
-
-    let fileSet = listedFiles.get(dir);
-    if (!fileSet) {
-        fileSet = new Set<string>();
-        for (const file of await readdir(dir)) {
-            fileSet.add(file);
-        }
-        listCount++;
-        listedFiles.set(dir, fileSet);
-    }
-
-    if (fileSet.has(basename(file.dest))) {
-        try {
-            const stat_res = await stat(file.dest);
-            if (stat_res && (stat_res.size === file.size || file.size <= 0)) {
-                inProgress++;
-                await downloadDone(file, RES_SKIP);
-                return;
-            }
-        } catch (error) {
-            if ((error as any).code !== 'ENOENT') {
-                console.error(error);
-                return;
-            }
-        }
-    }
-
-    queue.push(file);
-    setImmediate(downloadNext);
+async function addSubmission(submission: ESItem<IDBSubmission>) {
+    await addURL(submission, [submission._source.image, submission._source.thumbnail]);
 }
 
-async function downloadDone(file: QueueEntry, success: boolean | 'skipped', fileDeleted = false) {
+async function addUser(user: ESItem<IDBUser>) {
+    if (!user._source.avatar) {
+        return;
+    }
+
+    await addURL(user, [user._source.avatar]);
+}
+
+async function addURL(item: ESItem<IDBDownloadable>, urls: URL[]) {
+    const entry: QueueEntry = {
+        item,
+        downloads: urls.map((url) => new DownloadableFile(faRawAPI, url, process.env.FA_DOWNLOAD_PATH)),
+    };
+
+    if (
+        entry.downloads.length < 1 ||
+        (await Promise.all(entry.downloads.map(async (dl) => dl.isDownloaded()))).every(Boolean)
+    ) {
+        inProgress++;
+        await downloadDone(entry, RES_SKIP);
+        return;
+    }
+
+    for (const dl of entry.downloads) {
+        gotFiles.add(dl.localPath);
+    }
+
+    queue.push(entry);
+    setImmediate(() => {
+        downloadNext().catch(handleError);
+    });
+}
+
+async function downloadDone(entry: QueueEntry, success: boolean | 'skipped', fileDeleted = false) {
     if (success === RES_SKIP) {
         skippedCount++;
     } else if (success) {
@@ -192,19 +171,18 @@ async function downloadDone(file: QueueEntry, success: boolean | 'skipped', file
     doneCount++;
     inProgress--;
 
-    setImmediate(downloadNext);
+    setImmediate(() => {
+        downloadNext().catch(handleError);
+    });
 
-    const docBody: Partial<ESPost> = {};
+    const doc: {
+        downloaded?: boolean;
+        deleted?: boolean;
+    } = {};
     if (success) {
-        if (file.downloaded) {
-            return;
-        }
-        docBody[DOWNLOADED_KEY] = true;
+        doc.downloaded = true;
     } else if (fileDeleted) {
-        if (file.deleted) {
-            return;
-        }
-        docBody[DELETED_KEY] = true;
+        doc.deleted = true;
     } else {
         return;
     }
@@ -213,81 +191,39 @@ async function downloadDone(file: QueueEntry, success: boolean | 'skipped', file
         {
             update: {
                 _index: 'e621posts',
-                _id: file.id,
+                _id: entry.item._id,
             },
         },
         {
-            doc: docBody,
+            doc,
         },
     );
 
     await checkEnd();
 }
 
-async function requestPromise(url: string): Promise<IncomingMessage> {
-    return new Promise((resolve, reject) => {
-        request(url, { agent }, resolve).on('error', reject).end();
-    });
-}
-
-async function waitOnEvent(obj: EventEmitter, event: string): Promise<void> {
-    return new Promise((resolve) => {
-        obj.once(event, resolve);
-    });
-}
-
-async function downloadNext() {
+async function downloadNext(): Promise<void> {
     if (inProgress >= MAX_PARALLEL) {
         return;
     }
 
-    const file = queue.pop();
-    if (!file) {
+    const entry = queue.pop();
+    if (!entry) {
         return;
     }
     inProgress++;
 
-    const out = createWriteStream(file.dest);
-
     try {
-        const res = await requestPromise(file.url!);
-
-        if (res.statusCode === 404) {
-            await downloadDone(file, false, true);
-            return;
-        }
-
-        if (res.statusCode !== 200) {
-            console.error('Bad status code', res.statusCode, 'on', file.url);
-            setHadErrors();
-            await downloadDone(file, false);
-            return;
-        }
-
-        res.pipe(out);
-
-        await waitOnEvent(out, 'finish');
-
-        if (file.size <= 0) {
-            await downloadDone(file, true);
-            return;
-        }
-
-        let success = false;
-        try {
-            const stat_res = await stat(file.dest);
-            success = stat_res && stat_res.size === file.size;
-        } catch {
-            success = false;
-        }
-        if (!success) {
-            setHadErrors();
-        }
-        await downloadDone(file, success);
+        const results = await Promise.all(entry.downloads.map(downloadOne));
+        await downloadDone(
+            entry,
+            true,
+            results.every((r) => r === DownloadResult.DELETED),
+        );
     } catch (error) {
-        console.error('Error', error, 'on', file.url);
+        console.error('Error', error, 'on', entry, '->', error);
         setHadErrors();
-        await downloadDone(file, false);
+        await downloadDone(entry, false);
     }
 }
 
@@ -302,7 +238,16 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
     const promises: Promise<void>[] = [];
     for (const hit of response.hits.hits) {
         foundCount++;
-        promises.push(addURL(hit as ESItem));
+        switch (ARGS.type) {
+            case 'submission':
+                promises.push(addSubmission(hit as ESItem<IDBSubmission>));
+                break;
+            case 'user':
+                promises.push(addUser(hit as ESItem<IDBUser>));
+                break;
+            default:
+                throw new Error('Unknown type');
+        }
     }
     await Promise.all(promises);
 
@@ -318,20 +263,21 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
 
 async function main() {
     let response = await client.search({
-        index: 'e621posts',
+        index: `fa_${ARGS.type}s`,
         scroll: '60s',
         body: {
             size: ES_BATCH_SIZE,
             query: {
                 bool: {
                     must_not: mustNot,
-                    must: { exists: { field: URL_KEY } },
                 },
             },
         },
     });
 
+    // eslint-disable-next-line no-await-in-loop
     while (await getMoreUntilDone(response)) {
+        // eslint-disable-next-line no-await-in-loop
         response = await client.scroll({
             scroll_id: response._scroll_id,
             scroll: '60s',
@@ -339,12 +285,13 @@ async function main() {
     }
 }
 
-main()
+void main()
     .catch((error) => {
-        console.error('ES scan error, setting early exit', error.stack || error);
+        console.error('ES scan error, setting early exit', error);
         esDone = true;
         setHadErrors();
     })
+    // eslint-disable-next-line unicorn/prefer-top-level-await
     .then(checkEnd);
 function configureDotenv() {
     throw new Error('Function not implemented.');

@@ -1,14 +1,14 @@
 /* eslint-disable import/no-unused-modules */
 import { IJournal, ISubmission, IUser } from '../fa/models';
 
-export interface IDBUser extends IUser {
-    avatarDownloaded: boolean;
+export interface IDBDownloadable {
+    downloaded: boolean;
+    deleted: boolean;
 }
 
-export interface IDBSubmission extends ISubmission {
-    thumbnailDownloaded: boolean;
-    imageDownloaded: boolean;
-}
+export interface IDBUser extends IUser, IDBDownloadable {}
+
+export interface IDBSubmission extends ISubmission, IDBDownloadable {}
 
 export type IDBJournal = IJournal;
 
