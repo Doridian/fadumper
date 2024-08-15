@@ -33,7 +33,7 @@ let skippedCount = 0;
 let successCount = 0;
 let totalCount = 0;
 
-const MAX_PARALLEL = 1;
+const MAX_PARALLEL = Number.parseInt(process.env.DOWNLOADFILES_CONCURRENCY ?? '1', 10);
 const ES_BATCH_SIZE = 1000;
 
 const EXIT_ERROR_IF_FOUND = !!ARGS.looper;

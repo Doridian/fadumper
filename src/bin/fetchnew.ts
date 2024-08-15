@@ -1,9 +1,9 @@
-/* eslint-disable max-depth */
 /* eslint-disable no-console */
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { configDotenv } from 'dotenv';
+import pLimit from 'p-limit';
 import { IDBDownloadable, IDBJournal, IDBSubmission } from '../db/models';
 import { Client as FAClient } from '../fa/Client';
 import { FASystemError, RawAPI } from '../fa/RawAPI';
@@ -13,6 +13,8 @@ import { getNumericValue } from '../lib/utils';
 configDotenv();
 
 const DOWNLOADS_PATH = process.env.FA_DOWNLOAD_PATH ?? './downloads';
+const PER_FETCH_LIMIT = Number.parseInt(process.env.FETCHNEW_PER_FETCH_LIMIT ?? '10', 10);
+const limiter = pLimit(Number.parseInt(process.env.FETCHNEW_CONCURRENCY ?? '1', 10));
 
 const client = new ESClient({
     node: process.env.ES_URL,
@@ -82,10 +84,12 @@ async function loopType(faType: FetchNewWithIDType) {
 
     const knownLastId = faType === 'submission' ? await faClient.getMaxSubmissionID() : -1;
 
+    const { log, error: logError } = console;
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
         const idRangeMin = maxId + 1;
-        const idRangeMax = maxId + 10;
+        const idRangeMax = maxId + PER_FETCH_LIMIT;
         console.log(`Asking for ${faType} with range = ${idRangeMin} - ${idRangeMax} (last known id = ${knownLastId})`);
         maxId = idRangeMax;
 
@@ -93,97 +97,91 @@ async function loopType(faType: FetchNewWithIDType) {
 
         let maxFoundId = -1;
 
-        for (let i = idRangeMin; i <= idRangeMax; i++) {
-            maxFoundId = -1;
+        const fetchOne = async (i: number) => {
+            log(`Asking for ${faType} with id ${i}`);
+            let entry: { id: number };
             try {
-                console.log(`Asking for ${faType} with id ${i}`);
-                let entry: { id: number };
-                try {
-                    switch (faType) {
-                        case 'journal': {
-                            // eslint-disable-next-line no-await-in-loop
-                            const journal = await faClient.getJournal(i);
-                            const dbJournal: IDBJournal = {
-                                ...journal,
-                                downloaded: true,
-                                deleted: false,
-                                createdBy: journal.createdBy.id,
-                                createdByUsername: journal.createdBy.name,
-                                description: journal.description.text,
-                                descriptionRefersToJournals: [...journal.description.refersToJournals],
-                                descriptionRefersToSubmissions: [...journal.description.refersToSubmissions],
-                                descriptionRefersToUsers: [...journal.description.refersToUsers],
-                            };
-                            entry = dbJournal;
-                            break;
-                        }
-                        case 'submission': {
-                            // eslint-disable-next-line no-await-in-loop
-                            const submission = await faClient.getSubmission(i);
-                            const dbSubmission: IDBSubmission = {
-                                ...submission,
-                                downloaded: false,
-                                deleted: false,
-                                image: submission.image.href,
-                                thumbnail: submission.thumbnail.href,
-                                tags: [...submission.tags],
-                                createdBy: submission.createdBy.id,
-                                createdByUsername: submission.createdBy.name,
-                                description: submission.description.text,
-                                descriptionRefersToJournals: [...submission.description.refersToJournals],
-                                descriptionRefersToSubmissions: [...submission.description.refersToSubmissions],
-                                descriptionRefersToUsers: [...submission.description.refersToUsers],
-                            };
-                            entry = dbSubmission;
-                            break;
-                        }
-                        default:
-                            throw new Error('Unknown type');
+                switch (faType) {
+                    case 'journal': {
+                        const journal = await faClient.getJournal(i);
+                        const dbJournal: IDBJournal = {
+                            ...journal,
+                            downloaded: true,
+                            deleted: false,
+                            createdBy: journal.createdBy.id,
+                            createdByUsername: journal.createdBy.name,
+                            description: journal.description.text,
+                            descriptionRefersToJournals: [...journal.description.refersToJournals],
+                            descriptionRefersToSubmissions: [...journal.description.refersToSubmissions],
+                            descriptionRefersToUsers: [...journal.description.refersToUsers],
+                        };
+                        entry = dbJournal;
+                        break;
                     }
-                } catch (error) {
-                    if (error instanceof FASystemError) {
-                        const msg = error.faMessage.toLowerCase();
-                        if (msg.includes('the submission you are trying to find is not in our database')) {
-                            continue;
-                        }
+                    case 'submission': {
+                        const submission = await faClient.getSubmission(i);
+                        const dbSubmission: IDBSubmission = {
+                            ...submission,
+                            downloaded: false,
+                            deleted: false,
+                            image: submission.image.href,
+                            thumbnail: submission.thumbnail.href,
+                            tags: [...submission.tags],
+                            createdBy: submission.createdBy.id,
+                            createdByUsername: submission.createdBy.name,
+                            description: submission.description.text,
+                            descriptionRefersToJournals: [...submission.description.refersToJournals],
+                            descriptionRefersToSubmissions: [...submission.description.refersToSubmissions],
+                            descriptionRefersToUsers: [...submission.description.refersToUsers],
+                        };
+                        entry = dbSubmission;
+                        break;
                     }
-                    console.error('Error fetching', faType, i);
-                    throw error;
+                    default:
+                        throw new Error('Unknown type');
                 }
-
-                if (entry.id > maxFoundId) {
-                    maxFoundId = entry.id;
-                }
-
-                const doc: { id: number; downloaded: boolean; deleted: boolean } = {
-                    downloaded: false,
-                    deleted: false,
-                    ...entry,
-                };
-
-                pageQueue.push(
-                    {
-                        update: {
-                            _id: doc.id.toString(10),
-                            _index: `fa_${faType}s`,
-                            retry_on_conflict: 3,
-                        },
-                    },
-                    {
-                        doc,
-                        doc_as_upsert: true,
-                    },
-                );
             } catch (error) {
-                if (
-                    error instanceof FASystemError &&
-                    error.faMessage === 'The submission you are trying to find is not in our database.'
-                ) {
-                    continue;
+                if (error instanceof FASystemError) {
+                    const msg = error.faMessage.toLowerCase();
+                    if (msg.includes('the submission you are trying to find is not in our database')) {
+                        return;
+                    }
                 }
+                logError('Error fetching', faType, i);
                 throw error;
             }
+
+            if (entry.id > maxFoundId) {
+                maxFoundId = entry.id;
+            }
+
+            const doc: { id: number; downloaded: boolean; deleted: boolean } = {
+                downloaded: false,
+                deleted: false,
+                ...entry,
+            };
+
+            pageQueue.push(
+                {
+                    update: {
+                        _id: doc.id.toString(10),
+                        _index: `fa_${faType}s`,
+                        retry_on_conflict: 3,
+                    },
+                },
+                {
+                    doc,
+                    doc_as_upsert: true,
+                },
+            );
+        };
+
+        const promises: Promise<void>[] = [];
+        for (let i = idRangeMin; i <= idRangeMax; i++) {
+            promises.push(limiter(async () => fetchOne(i)));
         }
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.all(promises);
 
         if (pageQueue.length > 0) {
             // eslint-disable-next-line no-await-in-loop
@@ -198,7 +196,6 @@ async function loopType(faType: FetchNewWithIDType) {
             if (maxFoundId > 0) {
                 // eslint-disable-next-line no-await-in-loop
                 await setMaxID(faType, maxFoundId);
-                maxFoundId = -1;
             }
         } else if (knownLastId <= 0) {
             console.log(`No more items of type ${faType} found`);
