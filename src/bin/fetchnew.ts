@@ -86,7 +86,7 @@ async function loopType(faType: FetchNewWithIDType) {
     while (true) {
         const idRangeMin = maxId + 1;
         const idRangeMax = maxId + 10;
-        console.log(`Asking for ${faType} with range = ${idRangeMin} - ${idRangeMax}`);
+        console.log(`Asking for ${faType} with range = ${idRangeMin} - ${idRangeMax} (last known id = ${knownLastId})`);
         maxId = idRangeMax;
 
         const pageQueue: ESQueueEntry[] = [];
