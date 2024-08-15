@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+
+cat << EOF > /etc/periodic/daily/looper
+#!/bin/sh
+
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+cd /opt/app
+s6-setuidgid "${PUID}:${PGID}" ./looper.sh
+EOF
+
+chmod +x /etc/periodic/daily/looper
+
+exec crond -s -n
