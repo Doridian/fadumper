@@ -215,6 +215,22 @@ export class PageParser {
             }
         };
 
+        const checkLinkToAddSafe = (link: string | undefined) => {
+            if (!link) {
+                return;
+            }
+
+            let url;
+            try {
+                url = new URL(link, reqUrl);
+            } catch {
+                // Ignore these errors, some people have invalid URLs
+            }
+            if (url) {
+                checkLinkToAdd(url);
+            }
+        };
+
         for (const child of elem.contents()) {
             if (child.type === ElementType.Text) {
                 addToResult(child.data.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_PRE, ' '));
@@ -252,8 +268,9 @@ export class PageParser {
                     }
 
                     if (childCheerio.hasClass('named_url') || childCheerio.hasClass('auto_link')) {
-                        addToResult(`[url=${childCheerio.attr('href')}]`);
-                        checkLinkToAdd(new URL(childCheerio.attr('href') ?? '', reqUrl));
+                        const href = childCheerio.attr('href');
+                        checkLinkToAddSafe(href);
+                        addToResult(`[url=${href}]`);
                         PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
                         addToResult('[/url]');
                         handled = true;
