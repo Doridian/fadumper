@@ -80,6 +80,8 @@ async function setMaxID(faType: FetchNewWithIDType, maxId: number) {
 async function loopType(faType: FetchNewWithIDType) {
     let maxId = await getMaxID(faType);
 
+    const knownLastId = faType === 'submission' ? await faClient.getMaxSubmissionID() : -1;
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
         const idRangeMin = maxId + 1;
@@ -176,7 +178,10 @@ async function loopType(faType: FetchNewWithIDType) {
             }
         }
 
-        if (pageQueue.length === 0) {
+        if (knownLastId > 0 && maxId > knownLastId) {
+            console.log(`Reached known last id ${knownLastId}`);
+            break;
+        } else if (knownLastId <= 0 && pageQueue.length === 0) {
             console.log(`No more items of type ${faType} found`);
             break;
         }
