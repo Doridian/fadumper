@@ -37,5 +37,11 @@ jobs:
                   eslint_extensions: ts
                   prettier: true
                   prettier_dir: .
-            - name: Build
-              run: npm run build
+            - name: Test build container image
+              uses: docker/build-push-action@v6
+              with:
+                  push: false
+                  build-args: |
+                      GIT_REVISION=${{ github.sha }}
+                  tags: |
+                      ghcr.io/doridian/fadumper/backend:latest
