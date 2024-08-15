@@ -191,7 +191,7 @@ async function downloadDone(entry: QueueEntry, success: boolean | 'skipped', fil
     esQueue.push(
         {
             update: {
-                _index: 'e621posts',
+                _index: entry.item._index,
                 _id: entry.item._id,
             },
         },
@@ -218,8 +218,8 @@ async function downloadNext(): Promise<void> {
         const results = await Promise.all(entry.downloads.map(downloadOne));
         await downloadDone(
             entry,
-            true,
-            results.every((r) => r === DownloadResult.DELETED),
+            results.every((r) => r === DownloadResult.OK),
+            results.includes(DownloadResult.DELETED),
         );
     } catch (error) {
         console.error('Error', error, 'on', entry, '->', error);
