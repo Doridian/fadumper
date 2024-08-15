@@ -83,7 +83,6 @@ async function loopType(faType: FetchNewWithIDType) {
 
         for (let i = idRangeMin; i < idRangeMax; i++) {
             try {
-                // eslint-disable-next-line no-await-in-loop
                 let entry: { id: number };
                 switch (faType) {
                     case 'journal':
@@ -210,8 +209,15 @@ async function buildUserGraph(startUser: string, maxDepth: number, opt: IGraphOp
 async function safeMain() {
     try {
         await loopType('submission');
+
         // await loopType('journal');
-        console.log(buildUserGraph);
+
+        if (process.env.FA_START_USER) {
+            await buildUserGraph(process.env.FA_START_USER, 10, {
+                scanIncomingWatches: true,
+                scanOutgoingWatches: true,
+            });
+        }
     } catch (error) {
         console.error(error);
         process.exit(1);
