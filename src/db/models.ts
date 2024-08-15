@@ -6,11 +6,33 @@ export interface IDBDownloadable {
     deleted: boolean;
 }
 
-export interface IDBUser extends IUser, IDBDownloadable {}
+export interface IDBDescribable {
+    description: string;
+    descriptionRefersToUsers: string[];
+    descriptionRefersToSubmissions: number[];
+    descriptionRefersToJournals: number[];
+}
 
-export interface IDBSubmission extends ISubmission, IDBDownloadable {}
+export interface IDBCreatedBy {
+    createdBy: string;
+    createdByUsername: string;
+}
 
-export type IDBJournal = IJournal;
+export interface IDBUser extends Omit<IUser, 'description'>, IDBDescribable, IDBDownloadable, IDBCreatedBy {}
+
+export interface IDBSubmission
+    extends Omit<ISubmission, 'createdBy' | 'description' | 'tags'>,
+        IDBDescribable,
+        IDBDownloadable,
+        IDBCreatedBy {
+    tags: string[];
+}
+
+export interface IDBJournal
+    extends Omit<IJournal, 'createdBy' | 'description'>,
+        IDBDescribable,
+        IDBDownloadable,
+        IDBCreatedBy {}
 
 export interface ESItem<T> {
     _id: string;

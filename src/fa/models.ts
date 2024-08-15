@@ -21,7 +21,7 @@ export interface ISubmissionPreview {
     id: number;
     thumbnail: URL;
     title: string;
-    uploader: IUserPreview;
+    createdBy: IUserPreview;
 }
 
 export interface ISubmission extends ISubmissionPreview {
@@ -43,8 +43,8 @@ export interface IPaginatedResponse<Entry> {
 
 export interface IJournal {
     id: number;
-    author: IUserPreview;
     title: string;
-    content: IUserTextContent;
+    description: IUserTextContent;
+    createdBy: IUserPreview;
     createdAt: Date;
 }

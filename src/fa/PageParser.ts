@@ -50,7 +50,7 @@ export class PageParser {
         return {
             thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', reqUrl),
             title: $('div.submission-title').text().trim(),
-            uploader: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a')),
+            createdBy: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a')),
             image: new URL(imgElement.attr('data-fullview-src') ?? '', reqUrl),
             description: PageParser.parseHTMLUserContent($, $('div.submission-description'), reqUrl),
             category: $('span.category-name').first().text().trim(),
@@ -65,8 +65,8 @@ export class PageParser {
     public static parseJournal($: CheerioAPI, reqUrl: URL): Omit<IJournal, 'id'> {
         return {
             title: $('div.journal-title').text().trim(),
-            author: PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a'), $('h1 username')),
-            content: PageParser.parseHTMLUserContent($, $('div.journal-content'), reqUrl),
+            createdBy: PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a'), $('h1 username')),
+            description: PageParser.parseHTMLUserContent($, $('div.journal-content'), reqUrl),
             createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
     }
@@ -89,7 +89,7 @@ export class PageParser {
     }
 
     public static parseUserAnchor(reqUrl: URL, elem: Cheerio<Element>, nameElem?: Cheerio<Element>): IUserPreview {
-        const id = PageParser.USER_ID_REGEX.exec(new URL(elem.attr('href') ?? '', reqUrl).pathname)?.[1];
+        const id = PageParser.USER_ID_REGEX.exec(new URL(elem.attr('href') ?? '', reqUrl).pathname.toLowerCase())?.[1];
         if (!id) {
             throw new Error('Could not parse user anchor');
         }
@@ -119,16 +119,16 @@ export class PageParser {
             id: Number.parseInt(PageParser.parseSubmissionAnchor(elem.find('a')) ?? 'x', 10),
             thumbnail: new URL(elem.find('img').attr('src') ?? '', reqUrl),
             title: figCaption.find('p:first').text().trim(),
-            uploader: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a')),
+            createdBy: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a')),
         };
     }
 
-    public static parseJournalSection($: CheerioAPI, elem: Cheerio<Element>, reqUrl: URL): Omit<IJournal, 'author'> {
+    public static parseJournalSection($: CheerioAPI, elem: Cheerio<Element>, reqUrl: URL): Omit<IJournal, 'createdBy'> {
         return {
             id: Number.parseInt(elem.attr('id')?.replace('jid:', '') ?? 'X', 10),
             title: elem.find('.section-header h2').text().trim(),
             createdAt: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
-            content: PageParser.parseHTMLUserContent($, elem.find('.journal-body'), reqUrl),
+            description: PageParser.parseHTMLUserContent($, elem.find('.journal-body'), reqUrl),
         };
     }
 
@@ -281,6 +281,12 @@ export class PageParser {
                 case 'h6':
                 case 'p':
                 case 'div':
+                    // These footers are silly
+                    if (childCheerio.hasClass('submission-footer')) {
+                        handled = true;
+                        break;
+                    }
+
                     if (childCheerio.hasClass('bbcode')) {
                         const style = childCheerio.css('color');
                         if (style) {

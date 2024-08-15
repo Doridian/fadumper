@@ -1,0 +1,61 @@
+{
+    "aliases": {},
+    "mappings": {
+        "properties": {
+            "id": {
+                "type": "long"
+            },
+            "category": {
+                "type": "keyword"
+            },
+            "type": {
+                "type": "keyword"
+            },
+            "species": {
+                "type": "keyword"
+            },
+            "gender": {
+                "type": "keyword"
+            },
+            "image": {
+                "type": "keyword"
+            },
+            "tags": {
+                "type": "keyword"
+            },
+            "description": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "descriptionRefersToUsers": {
+                "type": "keyword"
+            },
+            "descriptionRefersToSubmissions": {
+                "type": "long"
+            },
+            "descriptionRefersToJournals": {
+                "type": "long"
+            },
+            "createdAt": {
+                "type": "date"
+            },
+            "createdBy": {
+                "type": "keyword"
+            },
+            "createdByUsername": {
+                "type": "keyword"
+            },
+            "deleted": {
+                "type": "boolean"
+            },
+            "downloaded": {
+                "type": "boolean"
+            }
+        }
+    }
+}

@@ -1,0 +1,46 @@
+{
+    "aliases": {},
+    "mappings": {
+        "properties": {
+            "id": {
+                "type": "keyword"
+            },
+            "name": {
+                "type": "keyword"
+            },
+            "avatar": {
+                "type": "keyword"
+            },
+            "type": {
+                "type": "keyword"
+            },
+            "createdAt": {
+                "type": "date"
+            },
+            "description": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "descriptionRefersToUsers": {
+                "type": "keyword"
+            },
+            "descriptionRefersToSubmissions": {
+                "type": "long"
+            },
+            "descriptionRefersToJournals": {
+                "type": "long"
+            },
+            "deleted": {
+                "type": "boolean"
+            },
+            "downloaded": {
+                "type": "boolean"
+            }
+        }
+    }
+}

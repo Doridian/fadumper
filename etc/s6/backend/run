@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+cd /opt/app
+# TODO: Make the API
+#exec s6-setuidgid "${PUID}:${PGID}" node ./dist/api/index.js
+sleep 3600

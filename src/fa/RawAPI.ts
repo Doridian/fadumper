@@ -28,10 +28,15 @@ export class RawAPI {
     ) {}
 
     private static checkSystemError($: CheerioAPI): void {
-        const titleLower = $('title').text().trim().toLowerCase();
-        if (titleLower === 'system error') {
-            throw new FASystemError($('div.section-body').text().trim());
+        const titleLower = $('section h2').text().trim().toLowerCase();
+        if (titleLower !== 'system error' && titleLower !== 'system message') {
+            return;
         }
+        let text = $('div.section-body').text().trim();
+        if (!text) {
+            text = $('div.redirect-message').text().trim();
+        }
+        throw new FASystemError(text);
     }
 
     public async downloadFile(url: URL, dest: PathLike): Promise<void> {
