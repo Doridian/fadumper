@@ -5,13 +5,18 @@ import { RawAPI } from './RawAPI';
 
 export class DownloadableFile {
     public readonly localPath: string;
+    public readonly url: URL;
 
     public constructor(
         private readonly rawAPI: RawAPI,
-        public readonly url: URL,
+        url: URL | string,
         prefix?: string,
     ) {
-        this.localPath = path.join(prefix ?? './downloads', `${url.host}${url.pathname}`);
+        if (!prefix) {
+            throw new Error('Prefix is required');
+        }
+        this.url = typeof url === 'string' ? new URL(url) : url;
+        this.localPath = path.join(prefix, `${this.url.host}${this.url.pathname}`);
     }
 
     public async getInfo(): Promise<Stats> {
