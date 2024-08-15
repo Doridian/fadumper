@@ -65,6 +65,10 @@ async function getMaxID(faType: FetchNewWithIDType) {
         maxId = getNumericValue(maxIdRes.aggregations?.max_id as number | undefined);
     }
 
+    if (maxId < 0) {
+        maxId = 0;
+    }
+
     console.log(`Starting with ${faType} maxId = ${maxId}`);
     return maxId;
 }
@@ -85,7 +89,7 @@ async function loopType(faType: FetchNewWithIDType) {
 
         const pageQueue: ESQueueEntry[] = [];
 
-        for (let i = idRangeMin; i < idRangeMax; i++) {
+        for (let i = idRangeMin; i <= idRangeMax; i++) {
             try {
                 console.log(`Asking for ${faType} with id ${i}`);
                 let entry: { id: number };
