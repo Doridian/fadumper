@@ -1,5 +1,4 @@
 /* eslint-disable unicorn/numeric-separators-style */
-/* eslint-disable no-await-in-loop */
 /* eslint-disable no-console */
 import { configDotenv } from 'dotenv';
 import { Client } from './fa/Client';

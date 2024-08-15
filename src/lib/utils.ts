@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { SearchTotalHits } from '@elastic/elasticsearch/lib/api/types';
 import { DownloadableFile } from '../fa/Downloadable';
 import { HttpError } from '../fa/RawAPI';

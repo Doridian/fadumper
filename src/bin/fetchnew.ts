@@ -17,7 +17,7 @@ const client = new ESClient({
 const faRawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
 const faClient = new FAClient(faRawAPI);
 
-type FetchNewType = 'journal' | 'submission';
+type FetchNewWithIDType = 'journal' | 'submission';
 
 interface ESBulkOperation<I extends string> {
     update: {
@@ -34,7 +34,7 @@ interface ESPostDoc {
 
 type ESQueueEntry = ESBulkOperation<string> | ESPostDoc;
 
-async function getMaxID(faType: FetchNewType) {
+async function getMaxID(faType: FetchNewWithIDType) {
     let maxId = -1;
     try {
         maxId = Number.parseInt(
@@ -65,11 +65,11 @@ async function getMaxID(faType: FetchNewType) {
     return maxId;
 }
 
-async function setMaxID(faType: FetchNewType, maxId: number) {
+async function setMaxID(faType: FetchNewWithIDType, maxId: number) {
     await writeFile(path.join(DOWNLOADS_PATH, `${faType}s.max-id`), maxId.toString());
 }
 
-async function loopType(faType: FetchNewType) {
+async function loopType(faType: FetchNewWithIDType) {
     let maxId = await getMaxID(faType);
 
     // eslint-disable-next-line no-constant-condition
@@ -83,7 +83,6 @@ async function loopType(faType: FetchNewType) {
 
         for (let i = idRangeMin; i < idRangeMax; i++) {
             try {
-                // eslint-disable-next-line no-await-in-loop
                 let entry: { id: number };
                 switch (faType) {
                     case 'journal':
@@ -210,8 +209,15 @@ async function buildUserGraph(startUser: string, maxDepth: number, opt: IGraphOp
 async function safeMain() {
     try {
         await loopType('submission');
+
         // await loopType('journal');
-        console.log(buildUserGraph);
+
+        if (process.env.FA_START_USER) {
+            await buildUserGraph(process.env.FA_START_USER, 10, {
+                scanIncomingWatches: true,
+                scanOutgoingWatches: true,
+            });
+        }
     } catch (error) {
         console.error(error);
         process.exit(1);
