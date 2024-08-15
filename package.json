@@ -18,11 +18,13 @@
     "domelementtype": "^2.3.0",
     "domhandler": "^5.0.3",
     "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "winston": "^3.13.1"
   },
   "devDependencies": {
     "@types/argparse": "^2.0.16",
     "@types/cheerio": "^0.22.35",
+    "@types/express": "^4.17.21",
     "@types/node": "^20.14.11",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
