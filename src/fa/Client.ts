@@ -1,6 +1,6 @@
-import { PageParser } from './PageParser';
-import { RawAPI } from './RawAPI';
-import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUser, IUserPreview } from './models';
+import { PageParser } from './PageParser.js';
+import { RawAPI } from './RawAPI.js';
+import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUser, IUserPreview } from './models.js';
 
 type PaginatedFetchFunction<Entry, ReqArg> = (param: ReqArg, page: number) => Promise<IPaginatedResponse<Entry[]>>;
 

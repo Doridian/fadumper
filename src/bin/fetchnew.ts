@@ -4,11 +4,11 @@ import path from 'node:path';
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { configDotenv } from 'dotenv';
 import pLimit from 'p-limit';
-import { IDBDownloadable, IDBJournal, IDBSubmission } from '../db/models';
-import { Client as FAClient } from '../fa/Client';
-import { FASystemError, RawAPI } from '../fa/RawAPI';
-import { IUserPreview } from '../fa/models';
-import { getNumericValue } from '../lib/utils';
+import { IDBDownloadable, IDBJournal, IDBSubmission } from '../db/models.js';
+import { Client as FAClient } from '../fa/Client.js';
+import { FASystemError, RawAPI } from '../fa/RawAPI.js';
+import { IUserPreview } from '../fa/models.js';
+import { getNumericValue } from '../lib/utils.js';
 
 configDotenv();
 

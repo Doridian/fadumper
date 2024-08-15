@@ -3,10 +3,10 @@ import { Client as ESClient } from '@elastic/elasticsearch';
 import { BulkOperationContainer, BulkUpdateAction, SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import { ArgumentParser } from 'argparse';
 import { configDotenv } from 'dotenv';
-import { ESItem, IDBDownloadable, IDBSubmission, IDBUser } from '../db/models';
-import { DownloadableFile } from '../fa/Downloadable';
-import { RawAPI } from '../fa/RawAPI';
-import { downloadOne, DownloadResult, getNumericValue } from '../lib/utils';
+import { ESItem, IDBDownloadable, IDBSubmission, IDBUser } from '../db/models.js';
+import { DownloadableFile } from '../fa/Downloadable.js';
+import { RawAPI } from '../fa/RawAPI.js';
+import { downloadOne, DownloadResult, getNumericValue } from '../lib/utils.js';
 
 configDotenv();
 

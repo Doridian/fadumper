@@ -1,7 +1,7 @@
 import { Stats } from 'node:fs';
 import { mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { RawAPI } from './RawAPI';
+import { RawAPI } from './RawAPI.js';
 
 export class DownloadableFile {
     public readonly localPath: string;

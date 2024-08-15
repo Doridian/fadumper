@@ -109,13 +109,8 @@
         "import/no-duplicates": "error",
         "import/no-dynamic-require": "error",
         "import/no-extraneous-dependencies": "error",
-        "import/no-unresolved": "error",
-        "import/no-unused-modules": [
-            "error",
-            {
-                "unusedExports": true
-            }
-        ],
+        "import/no-unresolved": "off",
+        "import/no-unused-modules": "off",
         "import/order": [
             "error",
             {

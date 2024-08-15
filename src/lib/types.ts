@@ -1,5 +1,3 @@
-/* eslint-disable import/no-unused-modules */
-
 export interface APIFileInfo {
     size: number;
     url: string;

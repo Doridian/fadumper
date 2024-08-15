@@ -11,7 +11,7 @@ import {
     IUser,
     IUserPreview,
     IUserTextContent,
-} from './models';
+} from './models.js';
 
 const isFurAffinityUrl = (url: URL): boolean => url.host === 'www.furaffinity.net' || url.host === 'furaffinity.net';
 
