@@ -111,7 +111,7 @@ app.get('/api/v1/healthcheck', (_: express.Request, res: express.Response) => {
 
 app.listen(8001, () => {
     // eslint-disable-next-line no-console
-    console.log('e621dumper API online');
+    console.log('fadumper API online');
 });
 
 process.on('SIGTERM', () => {
