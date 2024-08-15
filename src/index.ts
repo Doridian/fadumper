@@ -1,9 +1,9 @@
 /* eslint-disable unicorn/numeric-separators-style */
 /* eslint-disable no-console */
 import { configDotenv } from 'dotenv';
-import { Client } from './fa/Client';
-import { DownloadableFile } from './fa/Downloadable';
-import { RawAPI } from './fa/RawAPI';
+import { Client } from './fa/Client.js';
+import { DownloadableFile } from './fa/Downloadable.js';
+import { RawAPI } from './fa/RawAPI.js';
 
 configDotenv();
 

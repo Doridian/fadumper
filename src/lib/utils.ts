@@ -1,6 +1,6 @@
 import { SearchTotalHits } from '@elastic/elasticsearch/lib/api/types';
-import { DownloadableFile } from '../fa/Downloadable';
-import { HttpError } from '../fa/RawAPI';
+import { DownloadableFile } from '../fa/Downloadable.js';
+import { HttpError } from '../fa/RawAPI.js';
 
 export function getNumericValue(val: SearchTotalHits | number | undefined): number {
     if (val === undefined) {

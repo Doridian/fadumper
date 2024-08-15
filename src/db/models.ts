@@ -1,5 +1,4 @@
-/* eslint-disable import/no-unused-modules */
-import { IJournal, ISubmission, IUser } from '../fa/models';
+import { IJournal, ISubmission, IUser } from '../fa/models.js';
 
 export interface IDBDownloadable {
     downloaded: boolean;
