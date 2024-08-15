@@ -17,7 +17,7 @@ const client = new ESClient({
 const faRawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
 const faClient = new FAClient(faRawAPI);
 
-type FetchNewType = 'journal' | 'submission';
+type FetchNewWithIDType = 'journal' | 'submission';
 
 interface ESBulkOperation<I extends string> {
     update: {
@@ -34,7 +34,7 @@ interface ESPostDoc {
 
 type ESQueueEntry = ESBulkOperation<string> | ESPostDoc;
 
-async function getMaxID(faType: FetchNewType) {
+async function getMaxID(faType: FetchNewWithIDType) {
     let maxId = -1;
     try {
         maxId = Number.parseInt(
@@ -65,11 +65,11 @@ async function getMaxID(faType: FetchNewType) {
     return maxId;
 }
 
-async function setMaxID(faType: FetchNewType, maxId: number) {
+async function setMaxID(faType: FetchNewWithIDType, maxId: number) {
     await writeFile(path.join(DOWNLOADS_PATH, `${faType}s.max-id`), maxId.toString());
 }
 
-async function loopType(faType: FetchNewType) {
+async function loopType(faType: FetchNewWithIDType) {
     let maxId = await getMaxID(faType);
 
     // eslint-disable-next-line no-constant-condition
