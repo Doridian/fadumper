@@ -91,7 +91,10 @@ async function loopType(faType: FetchNewWithIDType) {
 
         const pageQueue: ESQueueEntry[] = [];
 
+        let maxFoundId = -1;
+
         for (let i = idRangeMin; i <= idRangeMax; i++) {
+            maxFoundId = -1;
             try {
                 console.log(`Asking for ${faType} with id ${i}`);
                 let entry: { id: number };
@@ -148,6 +151,10 @@ async function loopType(faType: FetchNewWithIDType) {
                     throw error;
                 }
 
+                if (entry.id > maxFoundId) {
+                    maxFoundId = entry.id;
+                }
+
                 const doc: { id: number; downloaded: boolean; deleted: boolean } = {
                     downloaded: false,
                     deleted: false,
@@ -178,25 +185,28 @@ async function loopType(faType: FetchNewWithIDType) {
             }
         }
 
-        if (knownLastId > 0 && maxId > knownLastId) {
-            console.log(`Reached known last id ${knownLastId}`);
-            break;
-        } else if (knownLastId <= 0 && pageQueue.length === 0) {
+        if (pageQueue.length > 0) {
+            // eslint-disable-next-line no-await-in-loop
+            const result = await client.bulk({
+                body: pageQueue,
+            });
+
+            if (result.errors) {
+                throw new Error(JSON.stringify(result));
+            }
+
+            if (maxFoundId > 0) {
+                // eslint-disable-next-line no-await-in-loop
+                await setMaxID(faType, maxFoundId);
+                maxFoundId = -1;
+            }
+        } else if (knownLastId <= 0) {
             console.log(`No more items of type ${faType} found`);
             break;
+        } else if (maxId > knownLastId) {
+            console.log(`Reached known last id ${knownLastId}`);
+            break;
         }
-
-        // eslint-disable-next-line no-await-in-loop
-        const result = await client.bulk({
-            body: pageQueue,
-        });
-
-        if (result.errors) {
-            throw new Error(JSON.stringify(result));
-        }
-
-        // eslint-disable-next-line no-await-in-loop
-        await setMaxID(faType, maxId);
     }
 }
 
