@@ -1,4 +1,5 @@
-import { createWriteStream, PathLike } from 'node:fs';
+import { createWriteStream } from 'node:fs';
+import { rename } from 'node:fs/promises';
 import { WritableStream } from 'node:stream/web';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 
@@ -39,10 +40,11 @@ export class RawAPI {
         throw new FASystemError(text);
     }
 
-    public async downloadFile(url: URL, dest: PathLike): Promise<void> {
+    public async downloadFile(url: URL, dest: string): Promise<void> {
         const response = await this.fetchRaw(url, false);
+        const tempDest = `${dest}.tmp`;
 
-        const file = createWriteStream(dest);
+        const file = createWriteStream(tempDest);
         const fileStream = new WritableStream({
             write(chunk) {
                 file.write(chunk);
@@ -53,6 +55,7 @@ export class RawAPI {
         });
 
         await response.body?.pipeTo(fileStream);
+        await rename(tempDest, dest);
     }
 
     public async fetchHTML(url: URL): Promise<CheerioAPI> {

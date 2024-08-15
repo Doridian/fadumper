@@ -119,6 +119,8 @@ async function loopType(faType: FetchNewWithIDType) {
                                 ...submission,
                                 downloaded: false,
                                 deleted: false,
+                                image: submission.image.href,
+                                thumbnail: submission.thumbnail.href,
                                 tags: [...submission.tags],
                                 createdBy: submission.createdBy.id,
                                 createdByUsername: submission.createdBy.name,

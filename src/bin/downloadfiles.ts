@@ -136,7 +136,7 @@ async function addUser(user: ESItem<IDBUser>) {
     await addURL(user, [user._source.avatar]);
 }
 
-async function addURL(item: ESItem<IDBDownloadable>, urls: URL[]) {
+async function addURL(item: ESItem<IDBDownloadable>, urls: string[]) {
     const entry: QueueEntry = {
         item,
         downloads: urls.map((url) => new DownloadableFile(faRawAPI, url, process.env.FA_DOWNLOAD_PATH)),
