@@ -117,12 +117,12 @@ export class Client {
         const url = new URL(`/journals/${userID}/${page}/`, RawAPI.BASE_URL);
         const $ = await this.rawAPI.fetchHTML(url);
 
-        const author = PageParser.parseUserAnchor(url, $('userpage-nav-avatar a'), $('h1 username'));
+        const createdBy = PageParser.parseUserAnchor(url, $('userpage-nav-avatar a'), $('h1 username'));
 
         const items = $('section').map((_, elem) => {
             return {
                 ...PageParser.parseJournalSection($, $(elem), url),
-                author,
+                createdBy,
             };
         });
 
@@ -156,6 +156,7 @@ export class Client {
         if (page < 1) {
             throw new Error('Page must be >= 1');
         }
+        userId = userId.toLowerCase();
 
         const url = new URL(`/watchlist/${watchDirection}/${userId}/${page}/`, RawAPI.BASE_URL);
 

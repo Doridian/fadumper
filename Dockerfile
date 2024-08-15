@@ -9,6 +9,7 @@ WORKDIR /opt/app
 RUN npm ci && npm run build
 RUN touch /opt/app/.env
 
+ENV FA_DOWNLOAD_PATH=/data
 VOLUME /data
 
 ENV PUID=1000

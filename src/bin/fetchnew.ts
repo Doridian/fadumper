@@ -1,12 +1,16 @@
+/* eslint-disable max-depth */
 /* eslint-disable no-console */
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Client as ESClient } from '@elastic/elasticsearch';
-import { IDBDownloadable } from '../db/models';
+import { configDotenv } from 'dotenv';
+import { IDBDownloadable, IDBJournal, IDBSubmission } from '../db/models';
 import { Client as FAClient } from '../fa/Client';
 import { FASystemError, RawAPI } from '../fa/RawAPI';
 import { IUserPreview } from '../fa/models';
 import { getNumericValue } from '../lib/utils';
+
+configDotenv();
 
 const DOWNLOADS_PATH = process.env.FA_DOWNLOAD_PATH ?? './downloads';
 
@@ -75,7 +79,7 @@ async function loopType(faType: FetchNewWithIDType) {
     // eslint-disable-next-line no-constant-condition
     while (true) {
         const idRangeMin = maxId + 1;
-        const idRangeMax = maxId + 100;
+        const idRangeMax = maxId + 10;
         console.log(`Asking for ${faType} with range = ${idRangeMin} - ${idRangeMax}`);
         maxId = idRangeMax;
 
@@ -83,19 +87,59 @@ async function loopType(faType: FetchNewWithIDType) {
 
         for (let i = idRangeMin; i < idRangeMax; i++) {
             try {
+                console.log(`Asking for ${faType} with id ${i}`);
                 let entry: { id: number };
-                switch (faType) {
-                    case 'journal':
-                        // eslint-disable-next-line no-await-in-loop
-                        entry = await faClient.getJournal(i);
-                        break;
-                    case 'submission':
-                        // eslint-disable-next-line no-await-in-loop
-                        entry = await faClient.getSubmission(i);
-                        break;
-                    default:
-                        throw new Error('Unknown type');
+                try {
+                    switch (faType) {
+                        case 'journal': {
+                            // eslint-disable-next-line no-await-in-loop
+                            const journal = await faClient.getJournal(i);
+                            const dbJournal: IDBJournal = {
+                                ...journal,
+                                downloaded: true,
+                                deleted: false,
+                                createdBy: journal.createdBy.id,
+                                createdByUsername: journal.createdBy.name,
+                                description: journal.description.text,
+                                descriptionRefersToJournals: [...journal.description.refersToJournals],
+                                descriptionRefersToSubmissions: [...journal.description.refersToSubmissions],
+                                descriptionRefersToUsers: [...journal.description.refersToUsers],
+                            };
+                            entry = dbJournal;
+                            break;
+                        }
+                        case 'submission': {
+                            // eslint-disable-next-line no-await-in-loop
+                            const submission = await faClient.getSubmission(i);
+                            const dbSubmission: IDBSubmission = {
+                                ...submission,
+                                downloaded: false,
+                                deleted: false,
+                                tags: [...submission.tags],
+                                createdBy: submission.createdBy.id,
+                                createdByUsername: submission.createdBy.name,
+                                description: submission.description.text,
+                                descriptionRefersToJournals: [...submission.description.refersToJournals],
+                                descriptionRefersToSubmissions: [...submission.description.refersToSubmissions],
+                                descriptionRefersToUsers: [...submission.description.refersToUsers],
+                            };
+                            entry = dbSubmission;
+                            break;
+                        }
+                        default:
+                            throw new Error('Unknown type');
+                    }
+                } catch (error) {
+                    if (error instanceof FASystemError) {
+                        const msg = error.faMessage.toLowerCase();
+                        if (msg.includes('the submission you are trying to find is not in our database')) {
+                            continue;
+                        }
+                    }
+                    console.error('Error fetching', faType, i);
+                    throw error;
                 }
+
                 const doc: { id: number; downloaded: boolean; deleted: boolean } = {
                     downloaded: false,
                     deleted: false,
@@ -139,9 +183,10 @@ async function loopType(faType: FetchNewWithIDType) {
         if (result.errors) {
             throw new Error(JSON.stringify(result));
         }
-    }
 
-    await setMaxID(faType, maxId);
+        // eslint-disable-next-line no-await-in-loop
+        await setMaxID(faType, maxId);
+    }
 }
 
 interface IUserGraphQueueEntry {

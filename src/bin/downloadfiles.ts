@@ -2,10 +2,13 @@
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { BulkOperationContainer, BulkUpdateAction, SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import { ArgumentParser } from 'argparse';
+import { configDotenv } from 'dotenv';
 import { ESItem, IDBDownloadable, IDBSubmission, IDBUser } from '../db/models';
 import { DownloadableFile } from '../fa/Downloadable';
 import { RawAPI } from '../fa/RawAPI';
 import { downloadOne, DownloadResult, getNumericValue } from '../lib/utils';
+
+configDotenv();
 
 const argParse = new ArgumentParser({
     description: 'FA downloadfiles',
@@ -13,8 +16,6 @@ const argParse = new ArgumentParser({
 argParse.add_argument('-t', '--type', { default: 'submission' });
 argParse.add_argument('-l', '--looper', { action: 'store_true' });
 const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean };
-
-configureDotenv();
 
 interface QueueEntry {
     downloads: DownloadableFile[];
@@ -293,6 +294,3 @@ void main()
     })
     // eslint-disable-next-line unicorn/prefer-top-level-await
     .then(checkEnd);
-function configureDotenv() {
-    throw new Error('Function not implemented.');
-}
