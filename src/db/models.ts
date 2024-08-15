@@ -40,5 +40,6 @@ export interface IDBJournal
 
 export interface ESItem<T> {
     _id: string;
+    _index: string;
     _source: T;
 }
