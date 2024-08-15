@@ -291,6 +291,8 @@ export class PageParser {
                         const style = childCheerio.css('color');
                         if (style) {
                             addToResult(`[color=${style}]`);
+                            handled = true;
+                            break;
                         }
 
                         if (childCheerio.hasClass('bbcode_quote')) {
