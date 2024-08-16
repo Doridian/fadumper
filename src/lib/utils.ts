@@ -4,7 +4,7 @@ import { SearchTotalHits } from '@elastic/elasticsearch/lib/api/types';
 import { DownloadableFile } from '../fa/Downloadable.js';
 import { HttpError } from '../fa/RawAPI.js';
 
-const madeDirs = new Set();
+const madeDirs = new Set<string>();
 
 export async function mkdirpFor(file: string): Promise<string> {
     const dir = path.dirname(file);
