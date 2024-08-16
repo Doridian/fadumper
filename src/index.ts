@@ -25,5 +25,4 @@ async function main(): Promise<void> {
     console.log('Latest submission is', await faClient.getMaxSubmissionID());
 }
 
-// eslint-disable-next-line unicorn/prefer-top-level-await
-main().catch(console.error);
+await main();

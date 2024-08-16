@@ -286,11 +286,15 @@ async function main() {
     }
 }
 
-void main()
-    .catch((error) => {
+async function safeMain() {
+    try {
+        await main();
+    } catch (error) {
         console.error('ES scan error, setting early exit', error);
         esDone = true;
         setHadErrors();
-    })
-    // eslint-disable-next-line unicorn/prefer-top-level-await
-    .then(checkEnd);
+    }
+    await checkEnd();
+}
+
+await safeMain();
