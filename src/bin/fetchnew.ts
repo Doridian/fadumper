@@ -6,13 +6,13 @@ import { configDotenv } from 'dotenv';
 import pLimit from 'p-limit';
 import { IDBDownloadable, IDBJournal, IDBSubmission } from '../db/models.js';
 import { Client as FAClient } from '../fa/Client.js';
+import { FA_DOWNLOAD_PATH } from '../fa/Downloadable.js';
 import { FASystemError, RawAPI } from '../fa/RawAPI.js';
 import { IUserPreview } from '../fa/models.js';
 import { getNumericValue } from '../lib/utils.js';
 
 configDotenv();
 
-const DOWNLOADS_PATH = process.env.FA_DOWNLOAD_PATH ?? './downloads';
 const PER_FETCH_LIMIT = Number.parseInt(process.env.FETCHNEW_PER_FETCH_LIMIT ?? '10', 10);
 const limiter = pLimit(Number.parseInt(process.env.FETCHNEW_CONCURRENCY ?? '1', 10));
 
@@ -44,7 +44,7 @@ async function getMaxID(faType: FetchNewWithIDType) {
     let maxId = -1;
     try {
         maxId = Number.parseInt(
-            (await readFile(path.join(DOWNLOADS_PATH, `${faType}s.max-id`))).toString('utf8').trim(),
+            (await readFile(path.join(FA_DOWNLOAD_PATH, `${faType}s.max-id`))).toString('utf8').trim(),
             10,
         );
     } catch (error) {
@@ -76,7 +76,7 @@ async function getMaxID(faType: FetchNewWithIDType) {
 }
 
 async function setMaxID(faType: FetchNewWithIDType, maxId: number) {
-    await writeFile(path.join(DOWNLOADS_PATH, `${faType}s.max-id`), maxId.toString());
+    await writeFile(path.join(FA_DOWNLOAD_PATH, `${faType}s.max-id`), maxId.toString());
 }
 
 async function loopType(faType: FetchNewWithIDType) {
