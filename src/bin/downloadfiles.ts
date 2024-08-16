@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { BulkOperationContainer, BulkUpdateAction, SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import { ArgumentParser } from 'argparse';
@@ -6,6 +5,7 @@ import { configDotenv } from 'dotenv';
 import { ESItem, IDBDownloadable, IDBSubmission, IDBUser } from '../db/models.js';
 import { DownloadableFile } from '../fa/Downloadable.js';
 import { RawAPI } from '../fa/RawAPI.js';
+import { logger } from '../lib/log.js';
 import { downloadOne, DownloadResult, getNumericValue } from '../lib/utils.js';
 
 configDotenv();
@@ -58,20 +58,14 @@ function setHadErrors() {
 }
 
 function printStats() {
-    console.log(
-        'Total:',
+    logger.info(
+        'Total: %i Queue: %i Done: %i Success: %i Failed: %i Skipped: %i Percent: %i',
         totalCount,
-        'Queue:',
         queue.length,
-        'Done:',
         doneCount,
-        'Success:',
         successCount,
-        'Failed:',
         errorCount,
-        'Skipped:',
         skippedCount,
-        'Percent:',
         Math.floor((doneCount / totalCount) * 100),
     );
 }
@@ -90,15 +84,15 @@ async function esRunBatchUpdate(min: number) {
         await client.bulk({
             operations: todo,
         });
-        console.log('Processed', todo.length / 2, 'batched updates');
+        logger.info('Processed %i batched updates', todo.length / 2);
     } catch (error) {
-        console.error(error);
+        logger.error('Error processing batched updates: %s', error);
         setHadErrors();
     }
 }
 
 function handleError(error: Error) {
-    console.error('Error', error);
+    logger.error('Error %s', error);
     setHadErrors();
 }
 
@@ -222,7 +216,7 @@ async function downloadNext(): Promise<void> {
             results.includes(DownloadResult.DELETED),
         );
     } catch (error) {
-        console.error('Error', error, 'on', entry, '->', error);
+        logger.error('Error on %s: %s', error, entry);
         setHadErrors();
         await downloadDone(entry, false);
     }
@@ -253,7 +247,7 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
     await Promise.all(promises);
 
     if (totalCount === foundCount) {
-        console.log('ES all added', foundCount);
+        logger.info('Queued all ES entries: %i', foundCount);
         esDone = true;
         await checkEnd();
         return false;
@@ -290,7 +284,7 @@ async function safeMain() {
     try {
         await main();
     } catch (error) {
-        console.error('ES scan error, setting early exit', error);
+        logger.error('ES scan error, setting early exit: %s', error);
         esDone = true;
         setHadErrors();
     }
