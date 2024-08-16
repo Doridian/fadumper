@@ -146,6 +146,13 @@ async function loopType(faType: FetchNewWithIDType) {
                     if (msg.includes('the submission you are trying to find is not in our database')) {
                         return;
                     }
+                    if (
+                        msg.includes(
+                            'the page you are trying to reach is currently pending deletion by a request from its owner',
+                        )
+                    ) {
+                        return;
+                    }
                 }
                 logError('Error fetching', faType, i);
                 throw error;
