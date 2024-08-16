@@ -3,6 +3,7 @@
 import { configDotenv } from 'dotenv';
 import { Client } from './fa/Client.js';
 import { RawAPI } from './fa/RawAPI.js';
+import { DownloadableFile } from './fa/Downloadable.js';
 
 configDotenv();
 
@@ -17,6 +18,9 @@ async function main(): Promise<void> {
     const faClient = new Client(rawAPI);
     const sub = await faClient.getSubmission(30414);
     console.log(sub);
+
+    const dl = new DownloadableFile(rawAPI, sub.thumbnail, './downloads');
+    await dl.download();
 
     console.log('Latest submission is', await faClient.getMaxSubmissionID());
 }
