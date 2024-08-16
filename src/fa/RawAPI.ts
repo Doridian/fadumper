@@ -1,5 +1,5 @@
+import { Hash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { rename } from 'node:fs/promises';
 import { IncomingMessage } from 'node:http';
 import { Agent, request } from 'node:https';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
@@ -48,17 +48,25 @@ export class RawAPI {
         throw new FASystemError(text);
     }
 
-    public async downloadFile(url: URL, dest: string): Promise<void> {
+    public async downloadFile(url: URL, dest: string, hash?: Hash): Promise<void> {
         const response = await this.fetchRaw(url, false, false);
-        const tempDest = `${dest}.tmp`;
 
-        const file = createWriteStream(tempDest);
+        const file = createWriteStream(dest);
+
         await new Promise((resolve, reject) => {
-            response.res.pipe(file);
+            response.res.on('data', (chunk: Buffer) => {
+                if (hash) {
+                    hash.update(chunk);
+                }
+                file.write(chunk, (err) => {
+                    if (err) {
+                        reject(err);
+                    }
+                });
+            });
             response.res.on('end', resolve);
             response.res.on('error', reject);
         });
-        await rename(tempDest, dest);
     }
 
     public async fetchHTML(url: URL): Promise<CheerioAPI> {
