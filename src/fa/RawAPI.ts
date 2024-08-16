@@ -1,7 +1,15 @@
 import { createWriteStream } from 'node:fs';
 import { rename } from 'node:fs/promises';
-import { WritableStream } from 'node:stream/web';
+import { IncomingMessage } from 'node:http';
+import { Agent, request } from 'node:https';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
+
+const httpsAgent = new Agent({ keepAlive: true });
+
+interface IResponse {
+    res: IncomingMessage;
+    body: Buffer;
+}
 
 export class HttpError extends Error {
     public constructor(
@@ -41,48 +49,69 @@ export class RawAPI {
     }
 
     public async downloadFile(url: URL, dest: string): Promise<void> {
-        const response = await this.fetchRaw(url, false);
+        const response = await this.fetchRaw(url, false, false);
         const tempDest = `${dest}.tmp`;
 
         const file = createWriteStream(tempDest);
-        const fileStream = new WritableStream({
-            write(chunk) {
-                file.write(chunk);
-            },
-            close() {
-                file.close();
-            },
+        await new Promise((resolve, reject) => {
+            response.res.pipe(file);
+            response.res.on('end', resolve);
+            response.res.on('error', reject);
         });
-
-        await response.body?.pipeTo(fileStream);
         await rename(tempDest, dest);
     }
 
     public async fetchHTML(url: URL): Promise<CheerioAPI> {
-        const response = await this.fetchRaw(url, true);
-
-        const $ = cheerioLoad(await response.text());
+        const response = await this.fetchRaw(url, true, true);
+        const $ = cheerioLoad(response.body);
         RawAPI.checkSystemError($);
         return $;
     }
 
-    private async fetchRaw(url: URL, includeCookies: boolean): Promise<Response> {
+    private async fetchRaw(url: URL, readBody: boolean, includeCookies: boolean): Promise<IResponse> {
         if (includeCookies && (url.protocol !== 'https:' || url.host !== 'www.furaffinity.net')) {
             throw new Error(`Invalid URL for Cookies: ${url.href});`);
         }
 
-        const response = await fetch(url, {
-            headers: {
-                cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : '',
-            },
-            keepalive: true,
-            redirect: 'follow',
+        return new Promise((resolve, reject) => {
+            request(
+                {
+                    host: url.host,
+                    port: url.port,
+                    path: url.pathname + url.search,
+                    method: 'GET',
+                    agent: httpsAgent,
+                    headers: {
+                        cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : '',
+                    },
+                },
+                (res) => {
+                    if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
+                        reject(new HttpError(res.statusCode, url));
+                        return;
+                    }
+
+                    if (readBody) {
+                        const bodyChunks: Buffer[] = [];
+                        res.on('data', (chunk: Buffer) => {
+                            bodyChunks.push(chunk);
+                        });
+                        res.on('end', () => {
+                            resolve({
+                                res,
+                                body: Buffer.concat(bodyChunks),
+                            });
+                        });
+                        res.on('error', reject);
+                        return;
+                    }
+
+                    resolve({
+                        res,
+                        body: Buffer.alloc(0),
+                    });
+                },
+            ).end();
         });
-
-        if (response.status < 200 || response.status > 299) {
-            throw new HttpError(response.status, url);
-        }
-
-        return response;
     }
 }
