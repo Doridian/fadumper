@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 /* eslint-disable complexity */
 /* eslint-disable max-depth */
 import { Cheerio, CheerioAPI } from 'cheerio';
@@ -91,7 +92,7 @@ export class PageParser {
     public static parseUserAnchor(reqUrl: URL, elem: Cheerio<Element>, nameElem?: Cheerio<Element>): IUserPreview {
         const id = PageParser.USER_ID_REGEX.exec(new URL(elem.attr('href') ?? '', reqUrl).pathname.toLowerCase())?.[1];
         if (!id) {
-            throw new Error('Could not parse user anchor');
+            throw new Error(`Could not parse user anchor: ${elem.toString()}`);
         }
 
         let name = (nameElem ?? elem).text();
@@ -224,11 +225,25 @@ export class PageParser {
             try {
                 url = new URL(link, reqUrl);
             } catch {
-                // Ignore these errors, some people have invalid URLs
+                return;
             }
-            if (url) {
-                checkLinkToAdd(url);
+
+            checkLinkToAdd(url);
+        };
+
+        const parseUserAnchorSafe = (childCheerio: Cheerio<Element>): IUserPreview => {
+            let userPreview;
+            try {
+                userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio);
+            } catch {
+                return {
+                    id: '',
+                    name: childCheerio.text().trim(),
+                };
             }
+
+            content.refersToUsers.add(userPreview.id);
+            return userPreview;
         };
 
         for (const child of elem.contents()) {
@@ -252,16 +267,14 @@ export class PageParser {
                 case 'a':
                     if (childCheerio.hasClass('iconusername')) {
                         const hasUsernameSuffix = !!childCheerio.text().trim();
-                        const userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio);
-                        content.refersToUsers.add(userPreview.id);
+                        const userPreview = parseUserAnchorSafe(childCheerio);
                         addToResult(hasUsernameSuffix ? `:icon${userPreview.name}:` : `:${userPreview.name}icon:`);
                         handled = true;
                         break;
                     }
 
                     if (childCheerio.hasClass('linkusername')) {
-                        const userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio);
-                        content.refersToUsers.add(userPreview.id);
+                        const userPreview = parseUserAnchorSafe(childCheerio);
                         addToResult(`:link${userPreview.name}:`);
                         handled = true;
                         break;
