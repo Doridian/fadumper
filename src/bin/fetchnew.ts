@@ -287,5 +287,4 @@ async function safeMain() {
     }
 }
 
-// eslint-disable-next-line unicorn/prefer-top-level-await
-void safeMain();
+await safeMain();

@@ -1,21 +1,16 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Stats } from 'node:fs';
-import { mkdir, rename, stat, symlink } from 'node:fs/promises';
+import { rename, stat, symlink, unlink } from 'node:fs/promises';
 import path from 'node:path';
+import { mkdirp, mkdirpFor } from '../lib/utils.js';
 import { RawAPI } from './RawAPI.js';
 
 export const DOWNLOAD_PATH = process.env.DOWNLOAD_PATH ?? './downloads';
 const HASH_PATH = path.join(DOWNLOAD_PATH, 'hashes');
-
-const madeDirs = new Set<string>();
-async function mkdirCached(dir: string): Promise<void> {
-    if (madeDirs.has(dir)) {
-        return;
-    }
-
-    await mkdir(dir, { recursive: true });
-    madeDirs.add(dir);
-}
+const TEMP_PATH = path.join(DOWNLOAD_PATH, 'temp');
+await mkdirp(DOWNLOAD_PATH);
+await mkdirp(HASH_PATH);
+await mkdirp(TEMP_PATH);
 
 export class DownloadableFile {
     public readonly localPath: string;
@@ -47,18 +42,28 @@ export class DownloadableFile {
             return;
         }
 
-        const tempFile = `${this.localPath}.tmp`;
-        const hash = createHash('sha256');
+        const tempFile = path.join(TEMP_PATH, randomUUID());
 
-        await mkdirCached(path.dirname(this.localPath));
-        await this.rawAPI.downloadFile(this.url, tempFile, hash);
+        try {
+            const hash = createHash('sha256');
 
-        const hashDigest = hash.digest('hex');
-        const hashDir = path.join(HASH_PATH, hashDigest.slice(0, 2), hashDigest.slice(2, 4));
-        await mkdirCached(hashDir);
+            await mkdirpFor(this.localPath);
+            await this.rawAPI.downloadFile(this.url, tempFile, hash);
 
-        const hashFile = path.join(hashDir, `${hashDigest}${path.extname(this.localPath)}`);
-        await rename(tempFile, hashFile);
-        await symlink(path.relative(path.dirname(this.localPath), hashFile), this.localPath);
+            const hashDigest = hash.digest('hex');
+            const hashDir = path.join(HASH_PATH, hashDigest.slice(0, 2), hashDigest.slice(2, 4));
+            await mkdirp(hashDir);
+
+            const hashFile = path.join(hashDir, `${hashDigest}${path.extname(this.localPath)}`);
+            await rename(tempFile, hashFile);
+            await symlink(path.relative(path.dirname(this.localPath), hashFile), this.localPath);
+        } catch (error) {
+            try {
+                await unlink(tempFile);
+            } catch {
+                // Ignore
+            }
+            throw error;
+        }
     }
 }
