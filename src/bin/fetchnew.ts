@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Client as ESClient } from '@elastic/elasticsearch';
@@ -9,6 +8,7 @@ import { Client as FAClient } from '../fa/Client.js';
 import { DOWNLOAD_PATH } from '../fa/Downloadable.js';
 import { FASystemError, RawAPI } from '../fa/RawAPI.js';
 import { IUserPreview } from '../fa/models.js';
+import { logger } from '../lib/log.js';
 import { getNumericValue } from '../lib/utils.js';
 
 configDotenv();
@@ -48,7 +48,7 @@ async function getMaxID(faType: FetchNewWithIDType) {
             10,
         );
     } catch (error) {
-        console.error('Error loading maxId file:', error);
+        logger.error('Error loading maxId file:', error);
     }
 
     if (maxId <= 0) {
@@ -71,7 +71,7 @@ async function getMaxID(faType: FetchNewWithIDType) {
         maxId = 0;
     }
 
-    console.log(`Starting with ${faType} maxId = ${maxId}`);
+    logger.info('Starting with %s (end = %i)', faType, maxId);
     return maxId;
 }
 
@@ -84,13 +84,11 @@ async function loopType(faType: FetchNewWithIDType) {
 
     const knownLastId = faType === 'submission' ? await faClient.getMaxSubmissionID() : -1;
 
-    const { log, error: logError } = console;
-
     // eslint-disable-next-line no-constant-condition
     while (true) {
         const idRangeMin = maxId + 1;
         const idRangeMax = maxId + PER_FETCH_LIMIT;
-        console.log(`Asking for ${faType} with range = ${idRangeMin} - ${idRangeMax} (last known id = ${knownLastId})`);
+        logger.info('Next %s batch %i - %i (end = %i)', faType, idRangeMin, idRangeMax, knownLastId);
         maxId = idRangeMax;
 
         const pageQueue: ESQueueEntry[] = [];
@@ -98,7 +96,7 @@ async function loopType(faType: FetchNewWithIDType) {
         let maxFoundId = -1;
 
         const fetchOne = async (i: number) => {
-            log(`Asking for ${faType} with id ${i}`);
+            logger.info('Fetching %s %i', faType, i);
             let entry: { id: number };
             try {
                 switch (faType) {
@@ -154,9 +152,11 @@ async function loopType(faType: FetchNewWithIDType) {
                         return;
                     }
                 }
-                logError('Error fetching', faType, i);
+                logger.error('Error fetching %s %i', faType, i);
                 throw error;
             }
+
+            logger.info('Successfully fetched %s %i', faType, i);
 
             if (entry.id > maxFoundId) {
                 maxFoundId = entry.id;
@@ -205,10 +205,10 @@ async function loopType(faType: FetchNewWithIDType) {
                 await setMaxID(faType, maxFoundId);
             }
         } else if (knownLastId <= 0) {
-            console.log(`No more items of type ${faType} found`);
+            logger.info('Empty batch and unknown end. Assuming all %ss were found', faType);
             break;
         } else if (maxId > knownLastId) {
-            console.log(`Reached known last id ${knownLastId}`);
+            logger.info('Reached end %i', knownLastId);
             break;
         }
     }
@@ -234,7 +234,7 @@ async function buildUserGraph(startUser: string, maxDepth: number, opt: IGraphOp
         queue.push({ id: user.id, depth: 1, raw: user });
         i++;
     }
-    console.log(`Start user ${startUser} is watching ${i} users`);
+    logger.info('Start user %s is watching %i users', startUser, i);
 
     while (queue.length > 0) {
         const entry = queue.shift();
@@ -252,7 +252,7 @@ async function buildUserGraph(startUser: string, maxDepth: number, opt: IGraphOp
             continue;
         }
 
-        console.log('Checking user', entry.id, 'at depth', entry.depth);
+        logger.info('Checking user %s at depth %i', entry.id, entry.depth);
         if (opt.scanOutgoingWatches) {
             i = 0;
             // eslint-disable-next-line no-await-in-loop
@@ -260,7 +260,7 @@ async function buildUserGraph(startUser: string, maxDepth: number, opt: IGraphOp
                 queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
                 i++;
             }
-            console.log(`User ${entry.id} is watching ${i} users`);
+            logger.info('User %s is watching %i users', entry.id, i);
         }
         if (opt.scanIncomingWatches) {
             i = 0;
@@ -269,7 +269,7 @@ async function buildUserGraph(startUser: string, maxDepth: number, opt: IGraphOp
                 queue.push({ id: user.id, raw: user, depth: entry.depth + 1 });
                 i++;
             }
-            console.log(`User ${entry.id} is watched by ${i} users`);
+            logger.info('User %s is watched by %i users', entry.id, i);
         }
     }
 
@@ -289,7 +289,7 @@ async function safeMain() {
             });
         }
     } catch (error) {
-        console.error(error);
+        logger.error('Error: %s', error);
         process.exit(1);
     }
 }

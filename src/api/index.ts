@@ -4,6 +4,7 @@ import { URL } from 'node:url';
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { SearchHit } from '@elastic/elasticsearch/lib/api/types';
 import express from 'express';
+import { logger } from '../lib/log';
 
 const app = express();
 const client = new ESClient({
@@ -110,8 +111,7 @@ app.get('/api/v1/healthcheck', (_: express.Request, res: express.Response) => {
 });
 
 app.listen(8001, () => {
-    // eslint-disable-next-line no-console
-    console.log('fadumper API online');
+    logger.info('fadumper API online');
 });
 
 process.on('SIGTERM', () => {
