@@ -17,7 +17,7 @@ COPY etc /etc
 COPY --from=builder /opt/app /opt/app
 WORKDIR /opt/app
 
-ENV FA_DOWNLOAD_PATH=/data
+ENV DOWNLOAD_PATH=/data
 VOLUME /data
 
 ENV PUID=1000

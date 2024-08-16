@@ -19,7 +19,7 @@ async function main(): Promise<void> {
     const sub = await faClient.getSubmission(30414);
     console.log(sub);
 
-    const dl = new DownloadableFile(rawAPI, sub.thumbnail, './downloads');
+    const dl = new DownloadableFile(rawAPI, sub.thumbnail);
     await dl.download();
 
     console.log('Latest submission is', await faClient.getMaxSubmissionID());
