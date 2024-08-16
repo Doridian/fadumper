@@ -2,7 +2,6 @@
 /* eslint-disable no-console */
 import { configDotenv } from 'dotenv';
 import { Client } from './fa/Client.js';
-import { DownloadableFile } from './fa/Downloadable.js';
 import { RawAPI } from './fa/RawAPI.js';
 
 configDotenv();
@@ -16,10 +15,8 @@ async function main(): Promise<void> {
 
     const rawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
     const faClient = new Client(rawAPI);
-    const sub = await faClient.getSubmission(56865266);
+    const sub = await faClient.getSubmission(30414);
     console.log(sub);
-    const downloadClient = new DownloadableFile(rawAPI, sub.image, process.env.FA_DOWNLOAD_PATH);
-    await downloadClient.download();
 
     console.log('Latest submission is', await faClient.getMaxSubmissionID());
 }
