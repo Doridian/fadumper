@@ -108,7 +108,7 @@ async function loopType(faType: FetchNewWithIDType) {
 
         const fetchOne = async (i: number) => {
             logger.info('Fetching %s %i', faType, i);
-            let entry: { id: number };
+            let doc: { id: number; downloaded: boolean; deleted: boolean; hash: string };
             try {
                 switch (faType) {
                     case 'journal': {
@@ -117,6 +117,7 @@ async function loopType(faType: FetchNewWithIDType) {
                             ...journal,
                             downloaded: true,
                             deleted: false,
+                            hash: '',
                             createdBy: journal.createdBy.id,
                             createdByUsername: journal.createdBy.name,
                             description: journal.description.text,
@@ -124,7 +125,7 @@ async function loopType(faType: FetchNewWithIDType) {
                             descriptionRefersToSubmissions: [...journal.description.refersToSubmissions],
                             descriptionRefersToUsers: [...journal.description.refersToUsers],
                         };
-                        entry = dbJournal;
+                        doc = dbJournal;
                         break;
                     }
                     case 'submission': {
@@ -134,6 +135,7 @@ async function loopType(faType: FetchNewWithIDType) {
                             downloaded: false,
                             deleted: false,
                             image: submission.image.href,
+                            hash: '',
                             thumbnail: submission.thumbnail.href,
                             tags: [...submission.tags],
                             createdBy: submission.createdBy.id,
@@ -143,7 +145,7 @@ async function loopType(faType: FetchNewWithIDType) {
                             descriptionRefersToSubmissions: [...submission.description.refersToSubmissions],
                             descriptionRefersToUsers: [...submission.description.refersToUsers],
                         };
-                        entry = dbSubmission;
+                        doc = dbSubmission;
                         break;
                     }
                     default:
@@ -168,15 +170,9 @@ async function loopType(faType: FetchNewWithIDType) {
 
             logger.info('Successfully fetched %s %i', faType, i);
 
-            if (entry.id > maxFoundId) {
-                maxFoundId = entry.id;
+            if (doc.id > maxFoundId) {
+                maxFoundId = doc.id;
             }
-
-            const doc: { id: number; downloaded: boolean; deleted: boolean } = {
-                downloaded: false,
-                deleted: false,
-                ...entry,
-            };
 
             pageQueue.push(
                 {
@@ -290,7 +286,6 @@ async function safeMain() {
     await lockMutex.lock();
 
     try {
-        // eslint-disable-next-line unicorn/prefer-ternary
         if (ARGS.type === 'user') {
             if (!process.env.FA_START_USER) {
                 throw new Error('Missing or empty FA_START_USER');

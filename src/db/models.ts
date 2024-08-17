@@ -3,6 +3,7 @@ import { IJournal, ISubmission, IUser } from '../fa/models.js';
 export interface IDBDownloadable {
     downloaded: boolean;
     deleted: boolean;
+    hash: string;
 }
 
 export interface IDBDescribable {

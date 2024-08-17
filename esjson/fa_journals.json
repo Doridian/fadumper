@@ -41,6 +41,9 @@
             "createdByUsername": {
                 "type": "keyword"
             },
+            "hash": {
+                "type": "keyword"
+            },
             "deleted": {
                 "type": "boolean"
             },
