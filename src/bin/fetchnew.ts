@@ -1,6 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { SingleInstance } from '@doridian/single-instance';
 import { Client as ESClient } from '@elastic/elasticsearch';
+import { ArgumentParser } from 'argparse';
 import { configDotenv } from 'dotenv';
 import pLimit from 'p-limit';
 import { IDBDownloadable, IDBJournal, IDBSubmission } from '../db/models.js';
@@ -13,8 +15,17 @@ import { getNumericValue } from '../lib/utils.js';
 
 configDotenv();
 
+const argParse = new ArgumentParser({
+    description: 'FA fetchnew',
+});
+argParse.add_argument('-t', '--type', { default: 'submission' });
+argParse.add_argument('-l', '--looper', { action: 'store_true' });
+const ARGS = argParse.parse_args() as { type: 'journal' | 'submission' | 'user' };
+
 const PER_FETCH_LIMIT = Number.parseInt(process.env.FETCHNEW_PER_FETCH_LIMIT ?? '10', 10);
 const limiter = pLimit(Number.parseInt(process.env.FETCHNEW_CONCURRENCY ?? '1', 10));
+
+const lockMutex = new SingleInstance(`fadumper_fetchnew_${ARGS.type}`);
 
 const client = new ESClient({
     node: process.env.ES_URL,
@@ -276,21 +287,28 @@ async function buildUserGraph(startUser: string, maxDepth: number, opt: IGraphOp
 }
 
 async function safeMain() {
+    await lockMutex.lock();
+
     try {
-        await loopType('submission');
-
-        // await loopType('journal');
-
-        if (process.env.FA_START_USER) {
+        // eslint-disable-next-line unicorn/prefer-ternary
+        if (ARGS.type === 'user') {
+            if (!process.env.FA_START_USER) {
+                throw new Error('Missing or empty FA_START_USER');
+            }
             await buildUserGraph(process.env.FA_START_USER, 10, {
                 scanIncomingWatches: true,
                 scanOutgoingWatches: true,
             });
+        } else {
+            await loopType(ARGS.type);
         }
     } catch (error) {
         logger.error('Error: %s', error);
+        await lockMutex.unlock();
         process.exit(1);
     }
+
+    await lockMutex.unlock();
 }
 
 await safeMain();
