@@ -13,7 +13,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@doridian/single-instance": "^0.0.3",
+    "@doridian/single-instance": "^0.0.4",
     "@elastic/elasticsearch": "^8.14.0",
     "argparse": "^2.0.1",
     "cheerio": "^1.0.0-rc.12",
