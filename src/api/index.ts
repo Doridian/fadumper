@@ -4,7 +4,7 @@ import { URL } from 'node:url';
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { SearchHit } from '@elastic/elasticsearch/lib/api/types';
 import express from 'express';
-import { logger } from '../lib/log';
+import { logger } from '../lib/log.js';
 
 const app = express();
 const client = new ESClient({
@@ -18,11 +18,7 @@ function filterURL(container: ESRecordType, field: string, req: express.Request)
         const url = new URL(container[field]);
         url.pathname = `/files/${url.host}${url.pathname}`;
         url.host = req.hostname;
-        url.protocol = req.protocol;
-        container[field] = url.href;
-    }
-}
-
+        url.protocol = req.protocmore
 function filterESHit(hit: SearchHit<ESRecordType>, req: express.Request): ESRecordType {
     const source = hit._source;
     if (!source) {
