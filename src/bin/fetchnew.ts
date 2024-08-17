@@ -141,14 +141,13 @@ async function loopType(faType: FetchNewWithIDType) {
             } catch (error) {
                 if (error instanceof FASystemError) {
                     const msg = error.faMessage.toLowerCase();
-                    if (msg.includes('the submission you are trying to find is not in our database')) {
-                        return;
-                    }
                     if (
+                        msg.includes('the submission you are trying to find is not in our database') ||
                         msg.includes(
                             'the page you are trying to reach is currently pending deletion by a request from its owner',
                         )
                     ) {
+                        logger.warn('404 on %s %i', faType, i);
                         return;
                     }
                 }
