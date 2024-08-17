@@ -35,6 +35,9 @@
             "descriptionRefersToJournals": {
                 "type": "long"
             },
+            "hash": {
+                "type": "keyword"
+            },
             "deleted": {
                 "type": "boolean"
             },

@@ -7,7 +7,7 @@ import { ESItem, IDBDownloadable, IDBSubmission, IDBUser } from '../db/models.js
 import { DownloadableFile } from '../fa/Downloadable.js';
 import { RawAPI } from '../fa/RawAPI.js';
 import { logger } from '../lib/log.js';
-import { downloadOne, DownloadResult, getNumericValue } from '../lib/utils.js';
+import { downloadOne, FileDeleted, getNumericValue } from '../lib/utils.js';
 
 configDotenv();
 
@@ -158,7 +158,7 @@ async function addURL(item: ESItem<IDBDownloadable>, urls: string[]) {
     });
 }
 
-async function downloadDone(entry: QueueEntry, success: boolean | 'skipped', fileDeleted = false) {
+async function downloadDone(entry: QueueEntry, success: boolean | 'skipped', fileDeleted = false, fileHash?: string) {
     if (success === RES_SKIP) {
         skippedCount++;
     } else if (success) {
@@ -176,9 +176,13 @@ async function downloadDone(entry: QueueEntry, success: boolean | 'skipped', fil
     const doc: {
         downloaded?: boolean;
         deleted?: boolean;
+        hash?: string;
     } = {};
     if (success) {
         doc.downloaded = true;
+        if (fileHash) {
+            doc.hash = fileHash;
+        }
     } else if (fileDeleted) {
         doc.deleted = true;
     } else {
@@ -213,11 +217,9 @@ async function downloadNext(): Promise<void> {
 
     try {
         const results = await Promise.all(entry.downloads.map(downloadOne));
-        await downloadDone(
-            entry,
-            results.every((r) => r === DownloadResult.OK),
-            results.includes(DownloadResult.DELETED),
-        );
+        const hasDeletion = results.includes(FileDeleted);
+        const [mainResult] = results;
+        await downloadDone(entry, !hasDeletion, hasDeletion, typeof mainResult === 'string' ? mainResult : undefined);
     } catch (error) {
         logger.error('Error on %s: %s', error, entry);
         setHadErrors();

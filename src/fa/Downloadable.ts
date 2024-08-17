@@ -37,9 +37,9 @@ export class DownloadableFile {
         }
     }
 
-    public async download(): Promise<void> {
+    public async download(): Promise<string | undefined> {
         if (await this.isDownloaded()) {
-            return;
+            return undefined;
         }
 
         const tempFile = path.join(TEMP_PATH, randomUUID());
@@ -57,6 +57,8 @@ export class DownloadableFile {
             const hashFile = path.join(hashDir, `${hashDigest}${path.extname(this.localPath)}`);
             await rename(tempFile, hashFile);
             await symlink(path.relative(path.dirname(this.localPath), hashFile), this.localPath);
+
+            return hashDigest;
         } catch (error) {
             try {
                 await unlink(tempFile);
