@@ -4,7 +4,7 @@ import { URL } from 'node:url';
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { SearchHit } from '@elastic/elasticsearch/lib/api/types';
 import express from 'express';
-import { logger } from '../lib/log';
+import { logger } from '../lib/log.js';
 
 const app = express();
 const client = new ESClient({
