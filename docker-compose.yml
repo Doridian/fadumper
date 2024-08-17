@@ -4,6 +4,8 @@ services:
         restart: always
         environment:
             ES_URL: http://elasticsearch:9200
+            FA_COOKIE_A: ${FA_COOKIE_A}
+            FA_COOKIE_B: ${FA_COOKIE_B}
         links:
             - elasticsearch:elasticsearch
         volumes:
