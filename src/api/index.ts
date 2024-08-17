@@ -18,7 +18,11 @@ function filterURL(container: ESRecordType, field: string, req: express.Request)
         const url = new URL(container[field]);
         url.pathname = `/files/${url.host}${url.pathname}`;
         url.host = req.hostname;
-        url.protocol = req.protocmore
+        url.protocol = req.protocol;
+        container[field] = url.href;
+    }
+}
+
 function filterESHit(hit: SearchHit<ESRecordType>, req: express.Request): ESRecordType {
     const source = hit._source;
     if (!source) {
