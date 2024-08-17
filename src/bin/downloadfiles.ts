@@ -1,3 +1,4 @@
+import { SingleInstance } from '@doridian/single-instance';
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { BulkOperationContainer, BulkUpdateAction, SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import { ArgumentParser } from 'argparse';
@@ -16,6 +17,8 @@ const argParse = new ArgumentParser({
 argParse.add_argument('-t', '--type', { default: 'submission' });
 argParse.add_argument('-l', '--looper', { action: 'store_true' });
 const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean };
+
+const lockMutex = new SingleInstance(`fadumper_downloadfiles_${ARGS.type}`);
 
 interface QueueEntry {
     downloads: DownloadableFile[];
@@ -281,6 +284,8 @@ async function main() {
 }
 
 async function safeMain() {
+    await lockMutex.lock();
+
     try {
         await main();
     } catch (error) {
@@ -288,7 +293,15 @@ async function safeMain() {
         esDone = true;
         setHadErrors();
     }
-    await checkEnd();
+
+    try {
+        await checkEnd();
+    } catch (error) {
+        logger.error('Error on checkEnd: %s', error);
+        setHadErrors();
+    }
+
+    await lockMutex.unlock();
 }
 
 await safeMain();
