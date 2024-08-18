@@ -42,7 +42,7 @@ export class RawAPI {
     ) {}
 
     private static checkSystemError($: CheerioAPI): void {
-        const titleLower = $('section h2').text().trim().toLowerCase();
+        const titleLower = $('body > section h2').text().trim().toLowerCase();
         if (titleLower !== 'system error' && titleLower !== 'system message') {
             return;
         }
