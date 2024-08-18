@@ -3,8 +3,11 @@ import { createWriteStream } from 'node:fs';
 import { IncomingMessage } from 'node:http';
 import { Agent, request } from 'node:https';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
+import { last } from 'cheerio/dist/commonjs/api/traversing';
 
 const httpsAgent = new Agent({ keepAlive: true });
+
+const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '3', 10);
 
 interface IResponse {
     res: IncomingMessage;
@@ -70,7 +73,41 @@ export class RawAPI {
     }
 
     public async fetchHTML(url: URL): Promise<CheerioAPI> {
-        const response = await this.fetchRaw(url, true, true);
+        let response;
+        let lastError: Error = new Error('Unknown error, this should not happen');
+        let retries = HTTP_RETRIES;
+        while (retries-- > 0) {
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                response = await this.fetchRaw(url, true, true);
+                break;
+            } catch (error) {
+                if (error instanceof HttpError && error.status >= 500 && error.status < 600) {
+                    lastError = error;
+                    continue;
+                }
+
+                if (error instanceof FASystemError) {
+                    const msg = error.faMessage.toLowerCase();
+                    if (
+                        msg.includes('the submission you are trying to find is not in our database') ||
+                        msg.includes(
+                            'the page you are trying to reach is currently pending deletion by a request from its owner',
+                        )
+                    ) {
+                        lastError = new HttpError(404, url);
+                        continue;
+                    }
+                }
+
+                throw error;
+            }
+        }
+
+        if (!response) {
+            throw lastError;
+        }
+
         const $ = cheerioLoad(response.body);
         RawAPI.checkSystemError($);
         return $;
