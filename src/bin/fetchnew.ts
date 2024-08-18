@@ -8,7 +8,7 @@ import pLimit from 'p-limit';
 import { IDBDownloadable, IDBJournal, IDBSubmission } from '../db/models.js';
 import { Client as FAClient } from '../fa/Client.js';
 import { DOWNLOAD_PATH } from '../fa/Downloadable.js';
-import { FASystemError, RawAPI } from '../fa/RawAPI.js';
+import { HttpError, RawAPI } from '../fa/RawAPI.js';
 import { IUserPreview } from '../fa/models.js';
 import { logger } from '../lib/log.js';
 import { getNumericValue } from '../lib/utils.js';
@@ -152,17 +152,9 @@ async function loopType(faType: FetchNewWithIDType) {
                         throw new Error('Unknown type');
                 }
             } catch (error) {
-                if (error instanceof FASystemError) {
-                    const msg = error.faMessage.toLowerCase();
-                    if (
-                        msg.includes('the submission you are trying to find is not in our database') ||
-                        msg.includes(
-                            'the page you are trying to reach is currently pending deletion by a request from its owner',
-                        )
-                    ) {
-                        logger.warn('404 on %s %i', faType, i);
-                        return;
-                    }
+                if (error instanceof HttpError && error.status === 404) {
+                    logger.warn('404 on %s %i', faType, i);
+                    return;
                 }
                 logger.error('Error fetching %s %i', faType, i);
                 throw error;
