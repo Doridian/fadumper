@@ -3,7 +3,6 @@ import { createWriteStream } from 'node:fs';
 import { IncomingMessage } from 'node:http';
 import { Agent, request } from 'node:https';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
-import { last } from 'cheerio/dist/commonjs/api/traversing';
 
 const httpsAgent = new Agent({ keepAlive: true });
 
