@@ -51,10 +51,13 @@ export class DownloadableFile {
             await this.rawAPI.downloadFile(this.url, tempFile, hash);
 
             const hashDigest = hash.digest('hex');
-            const hashDir = path.join(HASH_PATH, hashDigest.slice(0, 2), hashDigest.slice(2, 4));
-            await mkdirp(hashDir);
-
-            const hashFile = path.join(hashDir, `${hashDigest}${path.extname(this.localPath)}`);
+            const hashFile = path.join(
+                HASH_PATH,
+                hashDigest.slice(0, 2),
+                hashDigest.slice(2, 4),
+                `${hashDigest}${path.extname(this.localPath)}`,
+            );
+            await mkdirpFor(hashFile);
             await rename(tempFile, hashFile);
             await symlink(path.relative(path.dirname(this.localPath), hashFile), this.localPath);
 
