@@ -22,6 +22,8 @@ argParse.add_argument('-t', '--type', { default: 'submission' });
 argParse.add_argument('-l', '--looper', { action: 'store_true' });
 const ARGS = argParse.parse_args() as { type: 'journal' | 'submission' | 'user' };
 
+const FETCH_ONE_OVERRIDE = process.env.FETCHNEW_FETCH_ONE_OVERRIDE ?? '';
+
 const PER_FETCH_LIMIT = Number.parseInt(process.env.FETCHNEW_PER_FETCH_LIMIT ?? '10', 10);
 const limiter = pLimit(Number.parseInt(process.env.FETCHNEW_CONCURRENCY ?? '1', 10));
 
@@ -181,12 +183,21 @@ async function loopType(faType: FetchNewWithIDType) {
             );
         };
 
-        const promises: Promise<void>[] = [];
-        for (let i = idRangeMin; i <= idRangeMax; i++) {
-            promises.push(limiter(async () => fetchOne(i)));
+        if (FETCH_ONE_OVERRIDE) {
+            // eslint-disable-next-line no-await-in-loop
+            await fetchOne(Number.parseInt(FETCH_ONE_OVERRIDE, 10));
+            if (pageQueue.length <= 0) {
+                logger.warn('Could not fetch one, exiting');
+                break;
+            }
+        } else {
+            const promises: Promise<void>[] = [];
+            for (let i = idRangeMin; i <= idRangeMax; i++) {
+                promises.push(limiter(async () => fetchOne(i)));
+            }
+            // eslint-disable-next-line no-await-in-loop
+            await Promise.all(promises);
         }
-        // eslint-disable-next-line no-await-in-loop
-        await Promise.all(promises);
 
         if (pageQueue.length > 0) {
             // eslint-disable-next-line no-await-in-loop
@@ -196,6 +207,11 @@ async function loopType(faType: FetchNewWithIDType) {
 
             if (result.errors) {
                 throw new Error(JSON.stringify(result));
+            }
+
+            if (FETCH_ONE_OVERRIDE) {
+                logger.info('Fetched one, exiting');
+                break;
             }
 
             if (maxFoundId > 0) {
