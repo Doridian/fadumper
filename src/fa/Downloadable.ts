@@ -62,13 +62,12 @@ export class DownloadableFile {
             await symlink(path.relative(path.dirname(this.localPath), hashFile), this.localPath);
 
             return hashDigest;
-        } catch (error) {
+        } finally {
             try {
                 await unlink(tempFile);
             } catch {
                 // Ignore
             }
-            throw error;
         }
     }
 }
