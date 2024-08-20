@@ -19,7 +19,7 @@ export interface IUser extends IUserPreview {
 
 export interface ISubmissionPreview {
     id: number;
-    thumbnail: URL;
+    thumbnail?: URL;
     title: string;
     createdBy: IUserPreview;
 }

@@ -48,11 +48,18 @@ export class PageParser {
             tags.add($(elem).text().trim());
         });
 
+        const imageSrc = $('a.button:contains("Download")').attr('href');
+        if (!imageSrc) {
+            throw new Error('No image source found');
+        }
+
+        const thumbSrc = imgElement.attr('data-preview-src');
+
         return {
-            thumbnail: new URL(imgElement.attr('data-preview-src') ?? '', reqUrl),
+            thumbnail: thumbSrc ? new URL(thumbSrc, reqUrl) : undefined,
             title: $('div.submission-title').text().trim(),
             createdBy: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a')),
-            image: new URL(imgElement.attr('data-fullview-src') ?? '', reqUrl),
+            image: new URL(imageSrc, reqUrl),
             description: PageParser.parseHTMLUserContent($, $('div.submission-description'), reqUrl),
             category: $('span.category-name').first().text().trim(),
             type: $('span.type-name').first().text().trim(),
