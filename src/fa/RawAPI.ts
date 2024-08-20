@@ -58,7 +58,7 @@ export class RawAPI {
 
         const file = createWriteStream(dest);
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             response.res.on('data', (chunk: Buffer) => {
                 if (hash) {
                     hash.update(chunk);
@@ -69,7 +69,15 @@ export class RawAPI {
                     }
                 });
             });
-            response.res.on('end', resolve);
+            response.res.on('end', () => {
+                file.close((err) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve();
+                });
+            });
             response.res.on('error', reject);
         });
     }
