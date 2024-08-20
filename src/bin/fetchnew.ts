@@ -136,7 +136,7 @@ async function loopType(faType: FetchNewWithIDType) {
                             deleted: false,
                             image: submission.image.href,
                             hash: '',
-                            thumbnail: submission.thumbnail.href,
+                            thumbnail: submission.thumbnail?.href ?? '',
                             tags: [...submission.tags],
                             createdBy: submission.createdBy.id,
                             createdByUsername: submission.createdBy.name,

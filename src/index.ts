@@ -21,6 +21,11 @@ async function main(): Promise<void> {
     const sub2 = await faClient.getSubmission(3);
     logger.info('Got sub2 %s', sub2);
 
+    if (!sub.thumbnail) {
+        logger.error('No thumbnail found');
+        return;
+    }
+
     const dl = new DownloadableFile(rawAPI, sub.thumbnail);
     await dl.download();
 

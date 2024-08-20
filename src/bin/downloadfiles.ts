@@ -136,7 +136,7 @@ async function addUser(user: ESItem<IDBUser>) {
 async function addURL(item: ESItem<IDBDownloadable>, urls: string[]) {
     const entry: QueueEntry = {
         item,
-        downloads: urls.map((url) => new DownloadableFile(faRawAPI, url)),
+        downloads: urls.filter((url) => !!url).map((url) => new DownloadableFile(faRawAPI, url)),
     };
 
     if (
