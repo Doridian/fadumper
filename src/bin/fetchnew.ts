@@ -95,7 +95,7 @@ async function setMaxID(faType: FetchNewWithIDType, maxId: number) {
 async function loopType(faType: FetchNewWithIDType) {
     let maxId = await getMaxID(faType);
 
-    const knownLastId = faType === 'submission' ? await faClient.getMaxSubmissionID() : -1;
+    const knownLastId = faType === 'submission' && !FETCH_ONE_OVERRIDE ? await faClient.getMaxSubmissionID() : -1;
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
