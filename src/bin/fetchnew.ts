@@ -184,10 +184,11 @@ async function loopType(faType: FetchNewWithIDType) {
         };
 
         if (FETCH_ONE_OVERRIDE) {
+            logger.warn('FETCH_ONE_OVERRIDE is set!');
             // eslint-disable-next-line no-await-in-loop
             await fetchOne(Number.parseInt(FETCH_ONE_OVERRIDE, 10));
             if (pageQueue.length <= 0) {
-                logger.warn('Could not fetch one, exiting');
+                logger.error('Could not fetch one, exiting');
                 break;
             }
         } else {
@@ -210,7 +211,7 @@ async function loopType(faType: FetchNewWithIDType) {
             }
 
             if (FETCH_ONE_OVERRIDE) {
-                logger.info('Fetched one, exiting');
+                logger.warn('Fetched one, exiting');
                 break;
             }
 
