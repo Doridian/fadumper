@@ -11,7 +11,7 @@ RUN touch /opt/app/.env
 
 FROM node:lts-alpine
 
-RUN apk add bash curl cronie s6
+RUN apk add bash curl cronie s6 jq
 COPY etc /etc
 
 COPY --from=builder /opt/app /opt/app
