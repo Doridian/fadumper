@@ -219,8 +219,12 @@ async function downloadNext(): Promise<void> {
         const results = await Promise.all(entry.downloads.map(downloadOne));
         const [mainResult] = results;
         const mainResultDeleted = mainResult === FileDeleted;
-        const mainResultSuccess = typeof mainResult === 'string';
-        await downloadDone(entry, mainResultSuccess, mainResultDeleted, mainResultSuccess ? mainResult : undefined);
+        await downloadDone(
+            entry,
+            !mainResultDeleted,
+            mainResultDeleted,
+            typeof mainResult === 'string' ? mainResult : undefined,
+        );
     } catch (error) {
         logger.error('Error on %s: %s', error, entry);
         setHadErrors();
