@@ -146,7 +146,8 @@ export class RawAPI {
                     },
                 },
                 (res) => {
-                    if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
+                    // Code 513 on FA is used for "thumbnail not found" images for some reason
+                    if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299) && res.statusCode !== 513) {
                         reject(new HttpError(res.statusCode, url));
                         return;
                     }
