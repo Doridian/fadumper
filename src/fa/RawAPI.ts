@@ -43,13 +43,19 @@ export class RawAPI {
 
     private static checkSystemError($: CheerioAPI): void {
         const titleLower = $('body > section h2').text().trim().toLowerCase();
-        if (titleLower !== 'system error' && titleLower !== 'system message') {
+        if (titleLower !== 'system error') {
             return;
         }
-        let text = $('div.section-body').text().trim();
-        if (!text) {
-            text = $('div.redirect-message').text().trim();
+        const text = $('div.section-body').text().trim();
+        throw new FASystemError(text);
+    }
+
+    private static checkSystemMessage($: CheerioAPI): void {
+        const titleLower = $('section.notice-message h2').text().trim().toLowerCase();
+        if (titleLower !== 'system message') {
+            return;
         }
+        const text = $('section.notice-message p').text().trim();
         throw new FASystemError(text);
     }
 
@@ -93,6 +99,7 @@ export class RawAPI {
                 response = await this.fetchRaw(url, true, true);
                 const $ = cheerioLoad(response.body);
                 RawAPI.checkSystemError($);
+                RawAPI.checkSystemMessage($);
                 return $;
             } catch (error) {
                 lastError = error;

@@ -16,7 +16,7 @@ async function main(): Promise<void> {
 
     const rawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
     const faClient = new Client(rawAPI);
-    const sub = await faClient.getSubmission(438208);
+    const sub = await faClient.getSubmission(3);
     logger.info('Got sub %s', sub);
     const sub2 = await faClient.getSubmission(3);
     logger.info('Got sub2 %s', sub2);
