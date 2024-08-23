@@ -59,6 +59,11 @@ export class DownloadableFile {
             );
             await mkdirpFor(hashFile);
             await rename(tempFile, hashFile);
+            try {
+                await unlink(this.localPath);
+            } catch {
+                // Ignore
+            }
             await symlink(path.relative(path.dirname(this.localPath), hashFile), this.localPath);
 
             return hashDigest;

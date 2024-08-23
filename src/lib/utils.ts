@@ -1,8 +1,11 @@
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { SearchTotalHits } from '@elastic/elasticsearch/lib/api/types';
+import pLimit from 'p-limit';
 import { DownloadableFile } from '../fa/Downloadable.js';
 import { HttpError } from '../fa/RawAPI.js';
+
+const limiter = pLimit(1);
 
 const madeDirs = new Set<string>();
 
@@ -12,31 +15,49 @@ export async function mkdirpFor(file: string): Promise<string> {
     return dir;
 }
 
-export async function mkdirp(raw_dir: string): Promise<void> {
-    if (madeDirs.has(raw_dir)) {
+export async function mkdirp(rawDir: string): Promise<void> {
+    if (madeDirs.has(rawDir)) {
         return;
     }
-    const dir = path.normalize(raw_dir);
+    const dir = path.normalize(rawDir);
     if (madeDirs.has(dir)) {
         return;
     }
 
-    try {
-        await mkdir(dir);
-    } catch (error) {
-        switch ((error as { code: string }).code) {
-            case 'ENOENT':
-                await mkdirp(path.dirname(dir));
-                await mkdir(dir);
-                break;
-            case 'EEXIST':
-                break;
-            default:
-                throw error;
-        }
-    }
+    const segments = dir.split(path.sep);
 
-    madeDirs.add(raw_dir);
+    await limiter(async () => {
+        let i = segments.length + 1;
+        while (--i > 0) {
+            const partial = segments.slice(0, i).join(path.sep);
+            if (madeDirs.has(partial)) {
+                continue;
+            }
+
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                await mkdir(partial);
+                i += 2;
+            } catch (error) {
+                switch ((error as { code: string }).code) {
+                    case 'ENOENT':
+                        continue;
+                    case 'EEXIST':
+                        madeDirs.add(partial);
+                        break;
+                    default:
+                        throw error;
+                }
+            }
+
+            if (i > segments.length + 1) {
+                break;
+            }
+            madeDirs.add(partial);
+        }
+    });
+
+    madeDirs.add(rawDir);
     madeDirs.add(dir);
 }
 
