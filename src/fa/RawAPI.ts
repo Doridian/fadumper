@@ -3,9 +3,12 @@ import { createWriteStream } from 'node:fs';
 import { IncomingMessage } from 'node:http';
 import { Agent, request } from 'node:https';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { logger } from '../lib/log.js';
 
-const httpsAgent = new Agent({ keepAlive: true });
+const httpsAgent = process.env.PROXY_URL
+    ? new HttpsProxyAgent(process.env.PROXY_URL, { keepAlive: true })
+    : new Agent({ keepAlive: true });
 
 const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '3', 10);
 
