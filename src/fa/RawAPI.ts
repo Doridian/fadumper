@@ -146,6 +146,7 @@ export class RawAPI {
                     agent: httpsAgent,
                     headers: {
                         cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : '',
+                        'User-Agent': 'fadumper (Doridian)',
                     },
                 },
                 (res) => {
