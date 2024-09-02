@@ -6,9 +6,13 @@ import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { logger } from '../lib/log.js';
 
+const httpAgentOptions = {
+    keepAlive: true,
+    timeout: 5000,
+};
 const httpsAgent = process.env.PROXY_URL
-    ? new HttpsProxyAgent(process.env.PROXY_URL, { keepAlive: true })
-    : new Agent({ keepAlive: true });
+    ? new HttpsProxyAgent(process.env.PROXY_URL, httpAgentOptions)
+    : new Agent(httpAgentOptions);
 
 const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '3', 10);
 
@@ -176,7 +180,9 @@ export class RawAPI {
                         body: Buffer.alloc(0),
                     });
                 },
-            ).end();
+            )
+                .on('error', reject)
+                .end();
         });
     }
 }
