@@ -193,9 +193,9 @@ export class RawAPI {
                     method: 'GET',
                     agent: httpsAgent,
                     headers: {
-                        cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : '',
-                        'User-Agent': 'fadumper (Doridian)',
-                        'accept-encoding': 'gzip, deflate',
+                        cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
+                        'user-agent': 'fadumper (Doridian)',
+                        'accept-encoding': readBody ? 'gzip, deflate' : undefined,
                     },
                 },
                 (res) => {
@@ -251,7 +251,6 @@ export class RawAPI {
                         res,
                         body: Buffer.alloc(0),
                     });
-                    req.destroy();
                 },
             )
                 .on('error', reject)
