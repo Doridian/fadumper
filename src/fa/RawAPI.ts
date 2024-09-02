@@ -17,8 +17,8 @@ const httpsAgent = process.env.PROXY_URL
     : new Agent(httpAgentOptions);
 
 const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '3', 10);
-const HTTP_CONNECT_TIMEOUT = Number.parseInt(process.env.HTTP_CONNECT_TIMEOUT ?? '5000', 10);
-const HTTP_BODY_TIMEOUT = Number.parseInt(process.env.HTTP_BODY_TIMEOUT ?? '5000', 10);
+const HTTP_CONNECT_TIMEOUT = Number.parseInt(process.env.HTTP_CONNECT_TIMEOUT ?? '10000', 10);
+const HTTP_BODY_TIMEOUT = Number.parseInt(process.env.HTTP_BODY_TIMEOUT ?? '10000', 10);
 
 const ERROR_UNKNOWN = new Error('Unknown error, this should not happen');
 
@@ -258,7 +258,7 @@ export class RawAPI {
                 .end();
 
             reqTimeout = setTimeout(() => {
-                const err = new Error('Request timeout');
+                const err = new Error('Connect timeout');
                 req.destroy(err);
                 reject(err);
             }, HTTP_CONNECT_TIMEOUT);
