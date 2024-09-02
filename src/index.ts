@@ -1,7 +1,6 @@
 /* eslint-disable unicorn/numeric-separators-style */
 import { configDotenv } from 'dotenv';
 import { Client } from './fa/Client.js';
-import { DownloadableFile } from './fa/Downloadable.js';
 import { RawAPI } from './fa/RawAPI.js';
 import { logger } from './lib/log.js';
 
@@ -16,7 +15,7 @@ async function main(): Promise<void> {
 
     const rawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
     const faClient = new Client(rawAPI);
-    const sub = await faClient.getSubmission(9380872);
+    const sub = await faClient.getSubmission(4536332);
     logger.info('Got sub %s', sub);
     const sub2 = await faClient.getSubmission(9380872);
     logger.info('Got sub2 %s', sub2);
@@ -25,9 +24,6 @@ async function main(): Promise<void> {
         logger.error('No thumbnail found');
         return;
     }
-
-    const dl = new DownloadableFile(rawAPI, sub.thumbnail);
-    await dl.download();
 
     logger.info('Latest submission is %i', await faClient.getMaxSubmissionID());
 }
