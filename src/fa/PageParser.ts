@@ -4,6 +4,7 @@
 import { Cheerio, CheerioAPI } from 'cheerio';
 import { ElementType } from 'domelementtype';
 import { Element } from 'domhandler';
+import { logger } from '../lib/log.js';
 import {
     IJournal,
     IPaginatedResponse,
@@ -297,6 +298,8 @@ export class PageParser {
                         break;
                     }
 
+                    handled = true;
+                    logger.warn('Unhandled link: %s', childCheerio.toString());
                     break;
                 case 'wbr':
                     handled = true;
