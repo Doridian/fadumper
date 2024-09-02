@@ -1,7 +1,7 @@
 import { Hash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { Stream } from 'node:stream';
-import axios, { AxiosResponse, ResponseType } from 'axios';
+import axios, { AxiosProxyConfig, AxiosResponse, ResponseType } from 'axios';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 import { logger } from '../lib/log.js';
 import { delay } from '../lib/utils.js';
@@ -11,6 +11,19 @@ const HTTP_FETCH_TIMEOUT = Number.parseInt(process.env.HTTP_FETCH_TIMEOUT ?? '10
 const HTTP_STREAM_TIMEOUT = Number.parseInt(process.env.HTTP_STREAM_TIMEOUT ?? '30000', 10);
 
 const ERROR_UNKNOWN = new Error('Unknown error, this should not happen');
+
+const AXIOS_PROXY_CONFIG = ((): AxiosProxyConfig | undefined => {
+    if (!process.env.PROXY_URL) {
+        return undefined;
+    }
+    const url = new URL(process.env.PROXY_URL);
+    return {
+        host: url.hostname,
+        port: Number.parseInt(url.port, 10),
+        protocol: url.protocol,
+        auth: url.username ? { username: url.username, password: url.password } : undefined,
+    };
+})();
 
 export class HttpError extends Error {
     public constructor(
@@ -144,6 +157,7 @@ export class RawAPI {
         const res = await axios.request({
             url: url.href,
             method: 'GET',
+            proxy: AXIOS_PROXY_CONFIG,
             timeout: responseType === 'stream' ? HTTP_STREAM_TIMEOUT : HTTP_FETCH_TIMEOUT,
             headers: {
                 cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
