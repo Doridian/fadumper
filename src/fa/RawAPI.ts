@@ -1,31 +1,34 @@
 import { Hash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { IncomingMessage } from 'node:http';
-import { Agent, request } from 'node:https';
+import { Agent as HttpAgent } from 'node:http';
+import { Agent as HttpsAgent } from 'node:https';
 import { Stream } from 'node:stream';
-import { createGunzip, createInflate } from 'node:zlib';
+import axios, { AxiosProxyConfig, AxiosResponse, ResponseType } from 'axios';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { logger } from '../lib/log.js';
 import { delay } from '../lib/utils.js';
 
-const httpAgentOptions = {
-    keepAlive: true,
-};
-const httpsAgent = process.env.PROXY_URL
-    ? new HttpsProxyAgent(process.env.PROXY_URL, httpAgentOptions)
-    : new Agent(httpAgentOptions);
-
 const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '3', 10);
-const HTTP_ROUND_TRIP_TIMEOUT = Number.parseInt(process.env.HTTP_ROUND_TRIP_TIMEOUT ?? '10000', 10);
-const HTTP_BODY_TIMEOUT = Number.parseInt(process.env.HTTP_BODY_TIMEOUT ?? '10000', 10);
+const HTTP_FETCH_TIMEOUT = Number.parseInt(process.env.HTTP_FETCH_TIMEOUT ?? '10000', 10);
+const HTTP_STREAM_TIMEOUT = Number.parseInt(process.env.HTTP_STREAM_TIMEOUT ?? '30000', 10);
 
 const ERROR_UNKNOWN = new Error('Unknown error, this should not happen');
 
-interface IResponse {
-    res: IncomingMessage;
-    body: Buffer;
-}
+const HTTP_AGENT = new HttpAgent({ keepAlive: true });
+const HTTPS_AGENT = new HttpsAgent({ keepAlive: true });
+
+const AXIOS_PROXY_CONFIG = ((): AxiosProxyConfig | undefined => {
+    if (!process.env.PROXY_URL) {
+        return undefined;
+    }
+    const url = new URL(process.env.PROXY_URL);
+    return {
+        host: url.hostname,
+        port: Number.parseInt(url.port, 10),
+        protocol: url.protocol,
+        auth: url.username ? { username: url.username, password: url.password } : undefined,
+    };
+})();
 
 export class HttpError extends Error {
     public constructor(
@@ -70,32 +73,14 @@ export class RawAPI {
         throw new FASystemError(text);
     }
 
-    private static handleBody(
-        res: IncomingMessage,
-        stream: Stream,
-        resolve: (resp: IResponse) => void,
-        reject: (err: Error) => void,
-    ): void {
-        const bodyChunks: Buffer[] = [];
-        stream.on('data', (chunk: Buffer) => {
-            bodyChunks.push(chunk);
-        });
-        stream.on('error', reject);
-        stream.on('end', () => {
-            resolve({
-                res,
-                body: Buffer.concat(bodyChunks),
-            });
-        });
-    }
-
     public async downloadFile(url: URL, dest: string, hash?: Hash): Promise<void> {
-        const response = await this.fetchRaw(url, false, false);
+        const response = await this.fetchRaw(url, 'stream', false);
 
         const file = createWriteStream(dest);
 
         await new Promise<void>((resolve, reject) => {
-            response.res.on('data', (chunk: Buffer) => {
+            const resStream = response.data as Stream;
+            resStream.on('data', (chunk: Buffer) => {
                 if (hash) {
                     hash.update(chunk);
                 }
@@ -105,7 +90,7 @@ export class RawAPI {
                     }
                 });
             });
-            response.res.on('end', () => {
+            resStream.on('end', () => {
                 file.close((err) => {
                     if (err) {
                         reject(err);
@@ -114,7 +99,7 @@ export class RawAPI {
                     resolve();
                 });
             });
-            response.res.on('error', reject);
+            resStream.on('error', reject);
         });
     }
 
@@ -130,8 +115,8 @@ export class RawAPI {
             try {
                 lastError = ERROR_UNKNOWN;
                 // eslint-disable-next-line no-await-in-loop
-                response = await this.fetchRaw(url, true, true);
-                const $ = cheerioLoad(response.body);
+                response = await this.fetchRaw(url, 'text', true);
+                const $ = cheerioLoad(response.data as string);
                 RawAPI.checkSystemError($);
                 RawAPI.checkSystemMessage($);
                 return $;
@@ -169,98 +154,25 @@ export class RawAPI {
         throw lastError;
     }
 
-    private async fetchRaw(url: URL, readBody: boolean, includeCookies: boolean): Promise<IResponse> {
+    private async fetchRaw(url: URL, responseType: ResponseType, includeCookies: boolean): Promise<AxiosResponse> {
         if (includeCookies && (url.protocol !== 'https:' || url.host !== 'www.furaffinity.net')) {
             throw new Error(`Invalid URL for Cookies: ${url.href});`);
         }
 
-        return new Promise((resolve, reject) => {
-            let reqTimeout: NodeJS.Timeout | undefined;
-
-            const clearReqTimeout = () => {
-                if (!reqTimeout) {
-                    return;
-                }
-                clearTimeout(reqTimeout);
-                reqTimeout = undefined;
-            };
-
-            const req = request(
-                {
-                    host: url.host,
-                    port: url.port,
-                    path: url.pathname + url.search,
-                    method: 'GET',
-                    agent: httpsAgent,
-                    headers: {
-                        cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
-                        'user-agent': 'fadumper (Doridian)',
-                        'accept-encoding': readBody ? 'gzip, deflate' : undefined,
-                    },
-                },
-                (res) => {
-                    clearReqTimeout();
-
-                    // Code 513 on FA is used for "thumbnail not found" images for some reason
-                    if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299) && res.statusCode !== 513) {
-                        reject(new HttpError(res.statusCode, url));
-                        return;
-                    }
-
-                    if (readBody) {
-                        reqTimeout = setTimeout(() => {
-                            reqTimeout = undefined;
-                            req.destroy();
-                            reject(new Error('Body timeout'));
-                        }, HTTP_BODY_TIMEOUT);
-
-                        const subResolve = (resp: IResponse) => {
-                            clearReqTimeout();
-                            resolve(resp);
-                        };
-
-                        const subReject = (err: Error) => {
-                            clearReqTimeout();
-                            req.destroy(err);
-                            reject(err);
-                        };
-
-                        const encoding = res.headers['content-encoding'];
-                        switch (encoding) {
-                            case 'gzip': {
-                                const gzipStream = createGunzip();
-                                res.pipe(gzipStream);
-                                RawAPI.handleBody(res, gzipStream, subResolve, subReject);
-                                break;
-                            }
-                            case 'deflate': {
-                                const deflateStream = createInflate();
-                                res.pipe(deflateStream);
-                                RawAPI.handleBody(res, deflateStream, subResolve, subReject);
-                                break;
-                            }
-                            default:
-                                RawAPI.handleBody(res, res, subResolve, subReject);
-                                break;
-                        }
-                        res.on('error', subReject);
-                        return;
-                    }
-
-                    resolve({
-                        res,
-                        body: Buffer.alloc(0),
-                    });
-                },
-            )
-                .on('error', reject)
-                .end();
-
-            reqTimeout = setTimeout(() => {
-                const err = new Error('Round trip timeout');
-                req.destroy(err);
-                reject(err);
-            }, HTTP_ROUND_TRIP_TIMEOUT);
+        const res = await axios.request({
+            url: url.href,
+            method: 'GET',
+            proxy: AXIOS_PROXY_CONFIG,
+            httpAgent: HTTP_AGENT,
+            httpsAgent: HTTPS_AGENT,
+            timeout: responseType === 'stream' ? HTTP_STREAM_TIMEOUT : HTTP_FETCH_TIMEOUT,
+            headers: {
+                cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
+                'user-agent': 'fadumper (Doridian)',
+            },
+            responseType,
         });
+
+        return res;
     }
 }
