@@ -139,11 +139,12 @@ export class RawAPI {
                 lastError = error;
                 if (error instanceof HttpError && error.status >= 500 && error.status < 600) {
                     logger.warn(
-                        'HTTP error %d fetching %s, retrying (try %d/%d)',
+                        'HTTP error %d fetching %s, retrying (try %d/%d): %s',
                         error.status,
                         url.href,
                         tryNum + 1,
                         HTTP_RETRIES,
+                        error,
                     );
                     continue;
                 }
@@ -160,7 +161,7 @@ export class RawAPI {
                     }
                 }
 
-                logger.warn('System error fetching %s, retrying (try %d/%d)', url.href, tryNum + 1, HTTP_RETRIES);
+                logger.warn('Error fetching %s, retrying (try %d/%d): %s', url.href, tryNum + 1, HTTP_RETRIES, error);
                 continue;
             }
         }
