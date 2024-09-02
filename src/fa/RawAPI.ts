@@ -251,7 +251,6 @@ export class RawAPI {
                         res,
                         body: Buffer.alloc(0),
                     });
-                    req.destroy();
                 },
             )
                 .on('error', reject)
