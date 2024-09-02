@@ -2,6 +2,8 @@ import { Hash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { IncomingMessage } from 'node:http';
 import { Agent, request } from 'node:https';
+import { Stream } from 'node:stream';
+import { createGunzip, createInflate } from 'node:zlib';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { logger } from '../lib/log.js';
@@ -65,6 +67,19 @@ export class RawAPI {
         }
         const text = $('section.notice-message p').text().trim();
         throw new FASystemError(text);
+    }
+
+    private static handleBody(res: IncomingMessage, stream: Stream, resolve: (resp: IResponse) => void): void {
+        const bodyChunks: Buffer[] = [];
+        stream.on('data', (chunk: Buffer) => {
+            bodyChunks.push(chunk);
+        });
+        stream.on('end', () => {
+            resolve({
+                res,
+                body: Buffer.concat(bodyChunks),
+            });
+        });
     }
 
     public async downloadFile(url: URL, dest: string, hash?: Hash): Promise<void> {
@@ -162,6 +177,7 @@ export class RawAPI {
                     headers: {
                         cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : '',
                         'User-Agent': 'fadumper (Doridian)',
+                        'accept-encoding': 'gzip, deflate',
                     },
                 },
                 (res) => {
@@ -172,16 +188,24 @@ export class RawAPI {
                     }
 
                     if (readBody) {
-                        const bodyChunks: Buffer[] = [];
-                        res.on('data', (chunk: Buffer) => {
-                            bodyChunks.push(chunk);
-                        });
-                        res.on('end', () => {
-                            resolve({
-                                res,
-                                body: Buffer.concat(bodyChunks),
-                            });
-                        });
+                        const encoding = res.headers['content-encoding'];
+                        switch (encoding) {
+                            case 'gzip': {
+                                const gzipStream = createGunzip();
+                                res.pipe(gzipStream);
+                                RawAPI.handleBody(res, gzipStream, resolve);
+                                break;
+                            }
+                            case 'deflate': {
+                                const deflateStream = createInflate();
+                                res.pipe(deflateStream);
+                                RawAPI.handleBody(res, deflateStream, resolve);
+                                break;
+                            }
+                            default:
+                                RawAPI.handleBody(res, res, resolve);
+                                break;
+                        }
                         res.on('error', reject);
                         return;
                     }
