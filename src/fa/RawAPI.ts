@@ -11,13 +11,14 @@ import { delay } from '../lib/utils.js';
 
 const httpAgentOptions = {
     keepAlive: true,
-    timeout: 5000,
 };
 const httpsAgent = process.env.PROXY_URL
     ? new HttpsProxyAgent(process.env.PROXY_URL, httpAgentOptions)
     : new Agent(httpAgentOptions);
 
 const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '3', 10);
+const HTTP_CONNECT_TIMEOUT = Number.parseInt(process.env.HTTP_CONNECT_TIMEOUT ?? '5000', 10);
+const HTTP_BODY_TIMEOUT = Number.parseInt(process.env.HTTP_BODY_TIMEOUT ?? '5000', 10);
 
 const ERROR_UNKNOWN = new Error('Unknown error, this should not happen');
 
@@ -69,11 +70,17 @@ export class RawAPI {
         throw new FASystemError(text);
     }
 
-    private static handleBody(res: IncomingMessage, stream: Stream, resolve: (resp: IResponse) => void): void {
+    private static handleBody(
+        res: IncomingMessage,
+        stream: Stream,
+        resolve: (resp: IResponse) => void,
+        reject: (err: Error) => void,
+    ): void {
         const bodyChunks: Buffer[] = [];
         stream.on('data', (chunk: Buffer) => {
             bodyChunks.push(chunk);
         });
+        stream.on('error', reject);
         stream.on('end', () => {
             resolve({
                 res,
@@ -167,7 +174,17 @@ export class RawAPI {
         }
 
         return new Promise((resolve, reject) => {
-            request(
+            let reqTimeout: NodeJS.Timeout | undefined;
+
+            const clearReqTimeout = () => {
+                if (!reqTimeout) {
+                    return;
+                }
+                clearTimeout(reqTimeout);
+                reqTimeout = undefined;
+            };
+
+            const req = request(
                 {
                     host: url.host,
                     port: url.port,
@@ -181,6 +198,8 @@ export class RawAPI {
                     },
                 },
                 (res) => {
+                    clearReqTimeout();
+
                     // Code 513 on FA is used for "thumbnail not found" images for some reason
                     if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299) && res.statusCode !== 513) {
                         reject(new HttpError(res.statusCode, url));
@@ -188,25 +207,42 @@ export class RawAPI {
                     }
 
                     if (readBody) {
+                        reqTimeout = setTimeout(() => {
+                            reqTimeout = undefined;
+                            req.destroy();
+                            reject(new Error('Body timeout'));
+                        }, HTTP_BODY_TIMEOUT);
+
+                        const subResolve = (resp: IResponse) => {
+                            clearReqTimeout();
+                            resolve(resp);
+                        };
+
+                        const subReject = (err: Error) => {
+                            clearReqTimeout();
+                            req.destroy(err);
+                            reject(err);
+                        };
+
                         const encoding = res.headers['content-encoding'];
                         switch (encoding) {
                             case 'gzip': {
                                 const gzipStream = createGunzip();
                                 res.pipe(gzipStream);
-                                RawAPI.handleBody(res, gzipStream, resolve);
+                                RawAPI.handleBody(res, gzipStream, subResolve, subReject);
                                 break;
                             }
                             case 'deflate': {
                                 const deflateStream = createInflate();
                                 res.pipe(deflateStream);
-                                RawAPI.handleBody(res, deflateStream, resolve);
+                                RawAPI.handleBody(res, deflateStream, subResolve, subReject);
                                 break;
                             }
                             default:
-                                RawAPI.handleBody(res, res, resolve);
+                                RawAPI.handleBody(res, res, subResolve, subReject);
                                 break;
                         }
-                        res.on('error', reject);
+                        res.on('error', subReject);
                         return;
                     }
 
@@ -214,10 +250,17 @@ export class RawAPI {
                         res,
                         body: Buffer.alloc(0),
                     });
+                    req.destroy();
                 },
             )
                 .on('error', reject)
                 .end();
+
+            reqTimeout = setTimeout(() => {
+                const err = new Error('Request timeout');
+                req.destroy(err);
+                reject(err);
+            }, HTTP_CONNECT_TIMEOUT);
         });
     }
 }
