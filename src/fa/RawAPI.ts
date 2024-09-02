@@ -1,5 +1,7 @@
 import { Hash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
+import { Agent as HttpAgent } from 'node:http';
+import { Agent as HttpsAgent } from 'node:https';
 import { Stream } from 'node:stream';
 import axios, { AxiosProxyConfig, AxiosResponse, ResponseType } from 'axios';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
@@ -11,6 +13,9 @@ const HTTP_FETCH_TIMEOUT = Number.parseInt(process.env.HTTP_FETCH_TIMEOUT ?? '10
 const HTTP_STREAM_TIMEOUT = Number.parseInt(process.env.HTTP_STREAM_TIMEOUT ?? '30000', 10);
 
 const ERROR_UNKNOWN = new Error('Unknown error, this should not happen');
+
+const HTTP_AGENT = new HttpAgent({ keepAlive: true });
+const HTTPS_AGENT = new HttpsAgent({ keepAlive: true });
 
 const AXIOS_PROXY_CONFIG = ((): AxiosProxyConfig | undefined => {
     if (!process.env.PROXY_URL) {
@@ -158,6 +163,8 @@ export class RawAPI {
             url: url.href,
             method: 'GET',
             proxy: AXIOS_PROXY_CONFIG,
+            httpAgent: HTTP_AGENT,
+            httpsAgent: HTTPS_AGENT,
             timeout: responseType === 'stream' ? HTTP_STREAM_TIMEOUT : HTTP_FETCH_TIMEOUT,
             headers: {
                 cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
