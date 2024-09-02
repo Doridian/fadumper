@@ -155,7 +155,7 @@ async function loopType(faType: FetchNewWithIDType) {
                 }
             } catch (error) {
                 if (error instanceof HttpError && error.status === 404) {
-                    logger.warn('404 on %s %i', faType, i);
+                    logger.info('404 on %s %i', faType, i);
                     return;
                 }
                 logger.error('Error fetching %s %i', faType, i);

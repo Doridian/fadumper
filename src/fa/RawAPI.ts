@@ -5,6 +5,7 @@ import { Agent, request } from 'node:https';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { logger } from '../lib/log.js';
+import { delay } from '../lib/utils.js';
 
 const httpAgentOptions = {
     keepAlive: true,
@@ -98,8 +99,12 @@ export class RawAPI {
     public async fetchHTML(url: URL): Promise<CheerioAPI> {
         let response;
         let lastError: unknown = ERROR_UNKNOWN;
-        let retries = HTTP_RETRIES;
-        while (retries-- > 0) {
+        for (let tryNum = 0; tryNum < HTTP_RETRIES; tryNum++) {
+            if (tryNum > 0) {
+                // eslint-disable-next-line no-await-in-loop
+                await delay(1000 * 2 ** (tryNum - 1));
+            }
+
             try {
                 lastError = ERROR_UNKNOWN;
                 // eslint-disable-next-line no-await-in-loop
@@ -111,7 +116,13 @@ export class RawAPI {
             } catch (error) {
                 lastError = error;
                 if (error instanceof HttpError && error.status >= 500 && error.status < 600) {
-                    logger.warn('HTTP error %d fetching %s, retrying', error.status, url.href);
+                    logger.warn(
+                        'HTTP error %d fetching %s, retrying (try %d/%d)',
+                        error.status,
+                        url.href,
+                        tryNum + 1,
+                        HTTP_RETRIES,
+                    );
                     continue;
                 }
 
@@ -127,7 +138,7 @@ export class RawAPI {
                     }
                 }
 
-                logger.warn('System error fetching %s, retrying', url.href);
+                logger.warn('System error fetching %s, retrying (try %d/%d)', url.href, tryNum + 1, HTTP_RETRIES);
                 continue;
             }
         }
