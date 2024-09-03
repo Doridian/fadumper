@@ -44,5 +44,5 @@ jobs:
                       GIT_REVISION=${{ github.sha }}
                   tags: |
                       ghcr.io/doridian/fadumper/backend:latest
-                  cache-from: type=registry,ref=hcr.io/doridian/fadumper/backend:latest
+                  cache-from: type=registry,ref=ghcr.io/doridian/fadumper/backend:latest
                   cache-to: type=inline
