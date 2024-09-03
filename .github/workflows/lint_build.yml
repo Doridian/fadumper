@@ -37,6 +37,10 @@ jobs:
                   eslint_extensions: ts
                   prettier: true
                   prettier_dir: .
+            - name: Pull latest previous image
+              run: docker pull ghcr.io/doridian/fadumper/backend:latest || true
+            - name: Pull latest base image
+              run: docker pull node:lts-alpine
             - name: Test build container image
               uses: docker/build-push-action@v6
               with:

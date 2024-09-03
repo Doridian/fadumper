@@ -32,6 +32,10 @@ jobs:
                   registry: ghcr.io
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Pull latest previous image
+              run: docker pull ghcr.io/doridian/fadumper/backend:latest || true
+            - name: Pull latest base image
+              run: docker pull node:lts-alpine
             - name: Build container image
               uses: docker/build-push-action@v6
               with:
