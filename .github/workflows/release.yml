@@ -26,6 +26,18 @@ jobs:
         steps:
             - name: Check out the repo
               uses: actions/checkout@v4
+            - name: Update Docker version
+              env:
+                  DOCKER_CLI_EXPERIMENTAL: enabled
+              uses: crazy-max/ghaction-setup-docker@v3
+              with:
+                  channel: stable
+                  daemon-config: |
+                      {
+                        "features": {
+                          "containerd-snapshotter": true
+                        }
+                      }
             - name: Log in to GitHub Docker Registry
               uses: docker/login-action@v3
               with:
@@ -40,5 +52,5 @@ jobs:
                       GIT_REVISION=${{ github.sha }}
                   tags: |
                       ghcr.io/doridian/fadumper/backend:latest
-                  cache-from: type=registry,ref=ghcr.io/doridian/fadumper/backend-buildcache:latest
-                  cache-to: type=registry,ref=ghcr.io/doridian/fadumper/backend-buildcache:latest,mode=max
+                  cache-from: type=gha
+                  cache-to: type=gha
