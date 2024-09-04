@@ -138,9 +138,7 @@ export class RawAPI {
                     const msg = error.faMessage.toLowerCase();
                     if (
                         msg.includes('the submission you are trying to find is not in our database') ||
-                        msg.includes(
-                            'the page you are trying to reach is currently pending deletion by a request from its owner',
-                        )
+                        msg.includes('the page you are trying to reach is currently pending deletion by a request from')
                     ) {
                         throw new HttpError(404, url);
                     }
