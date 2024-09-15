@@ -92,6 +92,7 @@ export async function delay(ms: number): Promise<void> {
     });
 }
 
+// This method requires a path to only use forward slashes
 export function checkPathSafe(givenPath: string): boolean {
     if (givenPath.startsWith('/')) {
         return false;
