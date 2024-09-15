@@ -91,3 +91,12 @@ export async function delay(ms: number): Promise<void> {
         setTimeout(resolve, ms);
     });
 }
+
+export function checkPathSafe(givenPath: string): boolean {
+    if (givenPath.startsWith('/')) {
+        return false;
+    }
+
+    const segs = givenPath.split('/');
+    return segs.every((seg) => seg !== '.' && seg !== '..');
+}
