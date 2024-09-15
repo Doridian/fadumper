@@ -227,7 +227,7 @@ async function downloadNext(): Promise<void> {
             mainResultHash ? mainResult : undefined,
         );
     } catch (error) {
-        logger.error('Error on %s: %s', JSON.stringify(entry), error);
+        logger.error('Error on %s: %s', JSON.stringify(entry.item), error);
         setHadErrors();
         await downloadDone(entry, false);
     }
