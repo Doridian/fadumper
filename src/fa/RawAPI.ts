@@ -73,6 +73,13 @@ export class RawAPI {
         throw new FASystemError(text);
     }
 
+    private static checkValidPage($: CheerioAPI): void {
+        const onlineStats = $('div.online-stats');
+        if (onlineStats.length === 0) {
+            throw new Error('Invalid page (no div.online-stats). Partial load?');
+        }
+    }
+
     public async downloadFile(url: URL, dest: string, hash?: Hash): Promise<void> {
         const response = await this.fetchRaw(url, 'stream', false);
 
@@ -119,6 +126,7 @@ export class RawAPI {
                 const $ = cheerioLoad(response.data as string);
                 RawAPI.checkSystemError($);
                 RawAPI.checkSystemMessage($);
+                RawAPI.checkValidPage($);
                 return $;
             } catch (error) {
                 lastError = error;
