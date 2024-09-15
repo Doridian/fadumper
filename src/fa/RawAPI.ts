@@ -3,7 +3,7 @@ import { createWriteStream } from 'node:fs';
 import { Agent as HttpAgent } from 'node:http';
 import { Agent as HttpsAgent } from 'node:https';
 import { Stream } from 'node:stream';
-import axios, { AxiosProxyConfig, AxiosResponse, ResponseType } from 'axios';
+import axios, { AxiosError, AxiosProxyConfig, AxiosResponse, ResponseType } from 'axios';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 import { logger } from '../lib/log.js';
 import { delay } from '../lib/utils.js';
@@ -157,20 +157,31 @@ export class RawAPI {
             throw new Error(`Invalid URL for Cookies: ${url.href});`);
         }
 
-        const res = await axios.request({
-            url: url.href,
-            method: 'GET',
-            proxy: AXIOS_PROXY_CONFIG,
-            httpAgent: HTTP_AGENT,
-            httpsAgent: HTTPS_AGENT,
-            timeout: responseType === 'stream' ? HTTP_STREAM_TIMEOUT : HTTP_FETCH_TIMEOUT,
-            headers: {
-                cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
-                'user-agent': 'fadumper (Doridian)',
-            },
-            responseType,
-        });
+        try {
+            const res = await axios.request({
+                url: url.href,
+                method: 'GET',
+                proxy: AXIOS_PROXY_CONFIG,
+                httpAgent: HTTP_AGENT,
+                httpsAgent: HTTPS_AGENT,
+                timeout: responseType === 'stream' ? HTTP_STREAM_TIMEOUT : HTTP_FETCH_TIMEOUT,
+                headers: {
+                    cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
+                    'user-agent': 'fadumper (Doridian)',
+                },
+                responseType,
+            });
 
-        return res;
+            return res;
+        } catch (error) {
+            if (error instanceof AxiosError && error.response) {
+                // Code 513 on FA is used for "thumbnail not found" images for some reason
+                if (error.response.status === 513) {
+                    return error.response;
+                }
+                throw new HttpError(error.response.status, url);
+            }
+            throw error;
+        }
     }
 }
