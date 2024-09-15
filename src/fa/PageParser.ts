@@ -356,9 +356,9 @@ export class PageParser {
                         const allBBCodeTags = new Set<string>();
                         for (const className of childCheerio.attr('class')?.split(' ') ?? []) {
                             const match = /^bbcode_(.+)$/.exec(className);
-                            const tag = match?.[1]?.toLowerCase();
+                            const tag = match?.[1];
                             if (tag) {
-                                allBBCodeTags.add(tag);
+                                allBBCodeTags.add(tag.toLowerCase());
                             }
                         }
 
