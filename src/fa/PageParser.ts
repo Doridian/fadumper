@@ -353,6 +353,15 @@ export class PageParser {
                             break;
                         }
 
+                        const allBBCodeTags = new Set<string>();
+                        for (const className of childCheerio.attr('class')?.split(' ') ?? []) {
+                            const match = /^bbcode_(.+)$/.exec(className);
+                            const tag = match?.[1]?.toLowerCase();
+                            if (tag) {
+                                allBBCodeTags.add(tag);
+                            }
+                        }
+
                         for (const tagType of [
                             'b',
                             'i',
@@ -371,7 +380,7 @@ export class PageParser {
                             'h6',
                             'spoiler',
                         ]) {
-                            if (!childCheerio.hasClass(`bbcode_${tagType}`)) {
+                            if (!allBBCodeTags.has(tagType)) {
                                 continue;
                             }
 
