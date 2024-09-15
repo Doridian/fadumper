@@ -21,7 +21,7 @@ export class DownloadableFile {
         url: URL | string,
     ) {
         this.url = typeof url === 'string' ? new URL(url) : url;
-        this.localPath = path.join(DOWNLOAD_PATH, `${this.url.host}${this.url.pathname}`);
+        this.localPath = path.join(DOWNLOAD_PATH, `${this.url.host}${decodeURI(this.url.pathname)}`);
     }
 
     public async getInfo(): Promise<Stats> {

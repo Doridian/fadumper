@@ -16,7 +16,7 @@ type ESRecordType = Record<string, string>;
 function filterURL(container: ESRecordType, field: string, req: express.Request) {
     if (container[field]) {
         const url = new URL(container[field]);
-        url.pathname = `/files/${url.host}${url.pathname}`;
+        url.pathname = `/files/${url.host}${decodeURI(url.pathname)}`;
         url.host = req.hostname;
         url.protocol = req.protocol;
         container[field] = url.href;
