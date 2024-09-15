@@ -430,7 +430,7 @@ export class PageParser {
                     }
 
                     if (childCheerio.hasClass('smilie')) {
-                        // TODO: Actually handle smilies
+                        // Ignore smilies, they are not useful as metadata anyway
                         handled = true;
                         break;
                     }
