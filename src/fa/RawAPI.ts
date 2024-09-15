@@ -8,7 +8,7 @@ import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 import { logger } from '../lib/log.js';
 import { delay } from '../lib/utils.js';
 
-const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '3', 10);
+const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '10', 10);
 const HTTP_FETCH_TIMEOUT = Number.parseInt(process.env.HTTP_FETCH_TIMEOUT ?? '10000', 10);
 const HTTP_STREAM_TIMEOUT = Number.parseInt(process.env.HTTP_STREAM_TIMEOUT ?? '30000', 10);
 
