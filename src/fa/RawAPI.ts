@@ -177,7 +177,7 @@ export class RawAPI {
             if (error instanceof AxiosError && error.response) {
                 // Code 513 on FA is used for "thumbnail not found" images for some reason
                 if (error.response.status === 513) {
-                    throw new HttpError(404, url);
+                    return error.response;
                 }
                 throw new HttpError(error.response.status, url);
             }
