@@ -59,7 +59,7 @@ export class PageParser {
         return {
             thumbnail: thumbSrc ? new URL(thumbSrc, reqUrl) : undefined,
             title: $('div.submission-title').text().trim(),
-            createdBy: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a')),
+            createdBy: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a').first()),
             image: new URL(imageSrc, reqUrl),
             description: PageParser.parseHTMLUserContent($, $('div.submission-description'), reqUrl),
             category: $('span.category-name').first().text().trim(),
