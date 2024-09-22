@@ -119,6 +119,8 @@ async function checkEnd() {
     }
 
     await esRunBatchUpdate(1);
+
+    await lockMutex.unlock();
 }
 
 async function addSubmission(submission: ESItem<IDBSubmission>) {
@@ -308,8 +310,6 @@ async function safeMain() {
         logger.error('Error on checkEnd: %s', error);
         setHadErrors();
     }
-
-    await lockMutex.unlock();
 }
 
 await safeMain();
