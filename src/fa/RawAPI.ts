@@ -3,12 +3,12 @@ import { createWriteStream } from 'node:fs';
 import { Agent as HttpAgent } from 'node:http';
 import { Agent as HttpsAgent } from 'node:https';
 import { Stream } from 'node:stream';
-import axios, { AxiosProxyConfig, AxiosResponse, ResponseType } from 'axios';
+import axios, { AxiosError, AxiosProxyConfig, AxiosResponse, ResponseType } from 'axios';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
 import { logger } from '../lib/log.js';
 import { delay } from '../lib/utils.js';
 
-const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '3', 10);
+const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '10', 10);
 const HTTP_FETCH_TIMEOUT = Number.parseInt(process.env.HTTP_FETCH_TIMEOUT ?? '10000', 10);
 const HTTP_STREAM_TIMEOUT = Number.parseInt(process.env.HTTP_STREAM_TIMEOUT ?? '30000', 10);
 
@@ -73,6 +73,13 @@ export class RawAPI {
         throw new FASystemError(text);
     }
 
+    private static checkValidPage($: CheerioAPI): void {
+        const onlineStats = $('div.online-stats');
+        if (onlineStats.length === 0) {
+            throw new Error('Invalid page (no div.online-stats). Partial load?');
+        }
+    }
+
     public async downloadFile(url: URL, dest: string, hash?: Hash): Promise<void> {
         const response = await this.fetchRaw(url, 'stream', false);
 
@@ -119,6 +126,7 @@ export class RawAPI {
                 const $ = cheerioLoad(response.data as string);
                 RawAPI.checkSystemError($);
                 RawAPI.checkSystemMessage($);
+                RawAPI.checkValidPage($);
                 return $;
             } catch (error) {
                 lastError = error;
@@ -138,9 +146,7 @@ export class RawAPI {
                     const msg = error.faMessage.toLowerCase();
                     if (
                         msg.includes('the submission you are trying to find is not in our database') ||
-                        msg.includes(
-                            'the page you are trying to reach is currently pending deletion by a request from its owner',
-                        )
+                        msg.includes('the page you are trying to reach is currently pending deletion by a request from')
                     ) {
                         throw new HttpError(404, url);
                     }
@@ -159,20 +165,31 @@ export class RawAPI {
             throw new Error(`Invalid URL for Cookies: ${url.href});`);
         }
 
-        const res = await axios.request({
-            url: url.href,
-            method: 'GET',
-            proxy: AXIOS_PROXY_CONFIG,
-            httpAgent: HTTP_AGENT,
-            httpsAgent: HTTPS_AGENT,
-            timeout: responseType === 'stream' ? HTTP_STREAM_TIMEOUT : HTTP_FETCH_TIMEOUT,
-            headers: {
-                cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
-                'user-agent': 'fadumper (Doridian)',
-            },
-            responseType,
-        });
+        try {
+            const res = await axios.request({
+                url: url.href,
+                method: 'GET',
+                proxy: AXIOS_PROXY_CONFIG,
+                httpAgent: HTTP_AGENT,
+                httpsAgent: HTTPS_AGENT,
+                timeout: responseType === 'stream' ? HTTP_STREAM_TIMEOUT : HTTP_FETCH_TIMEOUT,
+                headers: {
+                    cookie: includeCookies ? `a=${this.cookieA}; b=${this.cookieB}` : undefined,
+                    'user-agent': 'fadumper (Doridian)',
+                },
+                responseType,
+            });
 
-        return res;
+            return res;
+        } catch (error) {
+            if (error instanceof AxiosError && error.response) {
+                // Code 413/513 are abused by FA for some images somehow...
+                if (error.response.status === 513 || error.response.status === 413) {
+                    return error.response;
+                }
+                throw new HttpError(error.response.status, url);
+            }
+            throw error;
+        }
     }
 }

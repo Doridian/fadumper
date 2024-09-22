@@ -59,7 +59,7 @@ export class PageParser {
         return {
             thumbnail: thumbSrc ? new URL(thumbSrc, reqUrl) : undefined,
             title: $('div.submission-title').text().trim(),
-            createdBy: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a')),
+            createdBy: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a').first()),
             image: new URL(imageSrc, reqUrl),
             description: PageParser.parseHTMLUserContent($, $('div.submission-description'), reqUrl),
             category: $('span.category-name').first().text().trim(),
@@ -353,6 +353,15 @@ export class PageParser {
                             break;
                         }
 
+                        const allBBCodeTags = new Set<string>();
+                        for (const className of childCheerio.attr('class')?.split(' ') ?? []) {
+                            const match = /^bbcode_(.+)$/.exec(className);
+                            const tag = match?.[1];
+                            if (tag) {
+                                allBBCodeTags.add(tag.toLowerCase());
+                            }
+                        }
+
                         for (const tagType of [
                             'b',
                             'i',
@@ -371,7 +380,7 @@ export class PageParser {
                             'h6',
                             'spoiler',
                         ]) {
-                            if (!childCheerio.hasClass(`bbcode_${tagType}`)) {
+                            if (!allBBCodeTags.has(tagType)) {
                                 continue;
                             }
 
@@ -421,7 +430,7 @@ export class PageParser {
                     }
 
                     if (childCheerio.hasClass('smilie')) {
-                        // TODO: Actually handle smilies
+                        // Ignore smilies, they are not useful as metadata anyway
                         handled = true;
                         break;
                     }

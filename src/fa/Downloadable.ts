@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Stats } from 'node:fs';
 import { rename, stat, symlink, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { mkdirp, mkdirpFor } from '../lib/utils.js';
+import { checkPathSafe, mkdirp, mkdirpFor } from '../lib/utils.js';
 import { RawAPI } from './RawAPI.js';
 
 export const DOWNLOAD_PATH = process.env.DOWNLOAD_PATH ?? './downloads';
@@ -21,7 +21,11 @@ export class DownloadableFile {
         url: URL | string,
     ) {
         this.url = typeof url === 'string' ? new URL(url) : url;
-        this.localPath = path.join(DOWNLOAD_PATH, `${this.url.host}${this.url.pathname}`);
+        const subPath = `${this.url.host}${decodeURI(this.url.pathname)}`.replaceAll('\\', '/');
+        if (!checkPathSafe(subPath)) {
+            throw new Error(`Unsafe path: ${subPath}`);
+        }
+        this.localPath = path.join(DOWNLOAD_PATH, subPath);
     }
 
     public async getInfo(): Promise<Stats> {
