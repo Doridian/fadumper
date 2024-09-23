@@ -19,9 +19,23 @@ argParse.add_argument('-l', '--looper', { action: 'store_true' });
 const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean };
 
 const PER_RUN_LIMIT = Number.parseInt(process.env.DOWNLOADFILES_PER_RUN_LIMIT ?? '100000', 10);
-const PER_RUN_TIMEOUT = Number.parseInt(process.env.DOWNLOADFILES_PER_RUN_TIMEOUT ?? '3600', 10) * 1000;
+const WATCHDOG_TIMEOUT = Number.parseInt(process.env.DOWNLOADFILES_WATCHDOG_TIMEOUT ?? '180', 10) * 1000;
+let watchdogTimer: NodeJS.Timeout | undefined;
 
 const lockMutex = new SingleInstance(`fadumper_downloadfiles_${ARGS.type}`);
+
+function feedWatchdog() {
+    if (watchdogTimer) {
+        clearTimeout(watchdogTimer);
+    }
+
+    watchdogTimer = setTimeout(() => {
+        logger.error('Timeout reached, setting early exit');
+        esDone = true;
+        setHadErrors();
+        process.exit(1);
+    }, WATCHDOG_TIMEOUT);
+}
 
 interface QueueEntry {
     downloads: DownloadableFile[];
@@ -222,6 +236,7 @@ async function downloadNext(): Promise<void> {
     inProgress++;
 
     try {
+        feedWatchdog();
         const results = await Promise.all(entry.downloads.map(downloadOne));
         const [mainResult] = results;
         const mainResultDeleted = mainResult === FileDeleted;
@@ -237,6 +252,7 @@ async function downloadNext(): Promise<void> {
         setHadErrors();
         await downloadDone(entry, false);
     }
+    feedWatchdog();
 }
 
 async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
@@ -274,6 +290,8 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
 }
 
 async function main() {
+    feedWatchdog();
+
     let response = await client.search({
         index: `fa_${ARGS.type}s`,
         scroll: '60s',
@@ -289,23 +307,22 @@ async function main() {
 
     // eslint-disable-next-line no-await-in-loop
     while (await getMoreUntilDone(response)) {
+        feedWatchdog();
         // eslint-disable-next-line no-await-in-loop
         response = await client.scroll({
             scroll_id: response._scroll_id,
             scroll: '60s',
         });
+        feedWatchdog();
     }
+
+    feedWatchdog();
 }
 
 async function safeMain() {
     await lockMutex.lock();
 
-    setTimeout(() => {
-        logger.error('Timeout reached, setting early exit');
-        esDone = true;
-        setHadErrors();
-        process.exit(process.exitCode);
-    }, PER_RUN_TIMEOUT);
+    feedWatchdog();
 
     try {
         await main();
@@ -314,6 +331,8 @@ async function safeMain() {
         esDone = true;
         setHadErrors();
     }
+
+    feedWatchdog();
 
     try {
         await checkEnd();
