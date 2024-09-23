@@ -263,7 +263,7 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
     await Promise.all(promises);
 
     if (totalCount === foundCount || foundCount >= PER_RUN_LIMIT) {
-        logger.info('Queued all ES entries: %i (total %, cap %i)', foundCount, totalCount, PER_RUN_LIMIT);
+        logger.info('Queued all ES entries: %i (total %i, cap %i)', foundCount, totalCount, PER_RUN_LIMIT);
         esDone = true;
         await checkEnd();
         return false;
