@@ -18,6 +18,8 @@ argParse.add_argument('-t', '--type', { default: 'submission' });
 argParse.add_argument('-l', '--looper', { action: 'store_true' });
 const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean };
 
+const PER_RUN_LIMIT = Number.parseInt(process.env.DOWNLOADFILES_PER_RUN_LIMIT ?? '100000', 10);
+
 const lockMutex = new SingleInstance(`fadumper_downloadfiles_${ARGS.type}`);
 
 interface QueueEntry {
@@ -62,14 +64,15 @@ function setHadErrors() {
 
 function printStats() {
     logger.info(
-        'Total: %i Queue: %i Done: %i Success: %i Failed: %i Skipped: %i Percent: %i',
+        'Total: %i Run: %i Queue: %i Done: %i Success: %i Failed: %i Skipped: %i Percent: %i',
         totalCount,
+        Math.min(totalCount, PER_RUN_LIMIT),
         queue.length,
         doneCount,
         successCount,
         errorCount,
         skippedCount,
-        Math.floor((doneCount / totalCount) * 100),
+        Math.floor((doneCount / Math.min(totalCount, PER_RUN_LIMIT)) * 100),
     );
 }
 printStats();
@@ -259,8 +262,8 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
     }
     await Promise.all(promises);
 
-    if (totalCount === foundCount) {
-        logger.info('Queued all ES entries: %i', foundCount);
+    if (totalCount === foundCount || foundCount >= PER_RUN_LIMIT) {
+        logger.info('Queued all ES entries: %i (total %, cap %i)', foundCount, totalCount, PER_RUN_LIMIT);
         esDone = true;
         await checkEnd();
         return false;
