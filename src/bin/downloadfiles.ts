@@ -19,6 +19,7 @@ argParse.add_argument('-l', '--looper', { action: 'store_true' });
 const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean };
 
 const PER_RUN_LIMIT = Number.parseInt(process.env.DOWNLOADFILES_PER_RUN_LIMIT ?? '100000', 10);
+const PER_RUN_TIMEOUT = Number.parseInt(process.env.DOWNLOADFILES_PER_RUN_TIMEOUT ?? '3600', 10) * 1000;
 
 const lockMutex = new SingleInstance(`fadumper_downloadfiles_${ARGS.type}`);
 
@@ -298,6 +299,13 @@ async function main() {
 
 async function safeMain() {
     await lockMutex.lock();
+
+    setTimeout(() => {
+        logger.error('Timeout reached, setting early exit');
+        esDone = true;
+        setHadErrors();
+        process.exit(process.exitCode);
+    }, PER_RUN_TIMEOUT);
 
     try {
         await main();
