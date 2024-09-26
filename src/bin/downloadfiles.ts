@@ -142,7 +142,7 @@ async function checkEnd() {
 }
 
 async function addSubmission(submission: ESItem<IDBSubmission>) {
-    await addURL(submission, [submission._source.image, submission._source.thumbnail]);
+    await addURL(submission, [submission._source.image]);
 }
 
 async function addUser(user: ESItem<IDBUser>) {
