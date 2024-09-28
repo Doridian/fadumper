@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/numeric-separators-style */
 import { configDotenv } from 'dotenv';
-import { Client } from './fa/Client.js';
+import { DownloadableFile } from './fa/Downloadable.js';
 import { RawAPI } from './fa/RawAPI.js';
 import { logger } from './lib/log.js';
 
@@ -14,18 +14,22 @@ async function main(): Promise<void> {
     }
 
     const rawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
-    const faClient = new Client(rawAPI);
-    const sub = await faClient.getSubmission(4536332);
-    logger.info('Got sub %s', sub);
-    const sub2 = await faClient.getSubmission(9380872);
-    logger.info('Got sub2 %s', sub2);
 
-    if (!sub.thumbnail) {
-        logger.error('No thumbnail found');
-        return;
-    }
+    const dl = new DownloadableFile(
+        rawAPI,
+        'https://t.furaffinity.net/9380872@600-1354491506.jpg',
+        '90989aeef4cec5ecea69cda1d8e2f1560e4cf3c34825ca1656d3ba22820bef33',
+    );
 
-    logger.info('Latest submission is %i', await faClient.getMaxSubmissionID());
+    logger.info('DL1 %s', await dl.isDownloaded());
+
+    const dl2 = new DownloadableFile(
+        rawAPI,
+        'https://t.furaffinity.net/9380872@600-1354491506.jpg',
+        '90989aeef4cec5ecea69cda1d8e2f1560e4cf3c34825ca1656d3ba22820bef44',
+    );
+
+    logger.info('DL2 %s', await dl2.isDownloaded());
 }
 
 await main();
