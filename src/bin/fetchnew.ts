@@ -216,6 +216,9 @@ async function loopType(faType: FetchNewWithIDType) {
             }
 
             if (maxFoundId > 0) {
+                if (knownLastId > 0 && maxFoundId > knownLastId) {
+                    maxFoundId = knownLastId;
+                }
                 // eslint-disable-next-line no-await-in-loop
                 await setMaxID(faType, maxFoundId);
             }
