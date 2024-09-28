@@ -30,15 +30,13 @@ export class DownloadableFile {
     }
 
     public getPath(): string {
-        if (!this.hash) {
-            throw new Error('File not downloaded');
-        }
+        const hash = this.getHash();
 
         if (!this.ext) {
             throw new Error('File extension not found');
         }
 
-        return path.join(HASH_PATH, this.hash.slice(0, 2), this.hash.slice(2, 4), `${this.hash}${this.ext}`);
+        return path.join(HASH_PATH, hash.slice(0, 2), hash.slice(2, 4), `${hash}${this.ext}`);
     }
 
     public getHash(): string {
