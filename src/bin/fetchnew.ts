@@ -100,7 +100,15 @@ async function loopType(faType: FetchNewWithIDType) {
     // eslint-disable-next-line no-constant-condition
     while (true) {
         const idRangeMin = maxId + 1;
-        const idRangeMax = maxId + PER_FETCH_LIMIT;
+        let idRangeMax = maxId + PER_FETCH_LIMIT;
+        if (knownLastId > 0 && idRangeMax > knownLastId) {
+            idRangeMax = knownLastId;
+        }
+        if (idRangeMax < idRangeMin) {
+            logger.info('Reached end (start batch) %i / %i', knownLastId, maxId);
+            break;
+        }
+
         logger.info('Next %s batch %i - %i (end = %i)', faType, idRangeMin, idRangeMax, knownLastId);
         maxId = idRangeMax;
 
@@ -216,14 +224,23 @@ async function loopType(faType: FetchNewWithIDType) {
             }
 
             if (maxFoundId > 0) {
+                let doBreak = false;
+                if (knownLastId > 0 && maxFoundId >= knownLastId) {
+                    maxFoundId = knownLastId;
+                    doBreak = true;
+                }
                 // eslint-disable-next-line no-await-in-loop
                 await setMaxID(faType, maxFoundId);
+                if (doBreak) {
+                    logger.info('Reached end (in batch) %i / %i', knownLastId, maxId);
+                    break;
+                }
             }
         } else if (knownLastId <= 0) {
             logger.info('Empty batch and unknown end. Assuming all %ss were found', faType);
             break;
         } else if (maxId > knownLastId) {
-            logger.info('Reached end %i', knownLastId);
+            logger.info('Reached end (empty batch) %i / %i', knownLastId, maxId);
             break;
         }
     }
