@@ -7,7 +7,7 @@ import { ESItem, IDBDownloadable, IDBSubmission, IDBUser } from '../db/models.js
 import { DownloadableFile } from '../fa/Downloadable.js';
 import { RawAPI } from '../fa/RawAPI.js';
 import { logger } from '../lib/log.js';
-import { downloadOne, FileDeleted, getNumericValue } from '../lib/utils.js';
+import { downloadOne, getNumericValue } from '../lib/utils.js';
 
 configDotenv();
 
@@ -259,12 +259,10 @@ async function downloadNext(): Promise<void> {
     try {
         feedWatchdog();
         const results = await Promise.all(entry.downloads.map(downloadOne));
-        const [mainResult] = results;
+        const [mainFileExists] = results;
         const [mainDownload] = entry.downloads;
-        const mainResultDeleted = mainResult === FileDeleted;
-        const mainResultDownloaded = mainDownload?.isDownloaded();
-        const mainResultHash = mainResultDownloaded ? mainDownload?.getHash() : undefined;
-        await downloadDone(entry, mainResultDownloaded ? true : RES_SKIP, mainResultDeleted, mainResultHash);
+        const mainResultHash = mainFileExists ? mainDownload?.getHash() : undefined;
+        await downloadDone(entry, mainFileExists ?? RES_SKIP, !mainFileExists, mainResultHash);
     } catch (error) {
         logger.error('Error on %s: %s', JSON.stringify(entry.item), error);
         setHadErrors();
