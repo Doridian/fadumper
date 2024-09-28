@@ -217,7 +217,7 @@ async function loopType(faType: FetchNewWithIDType) {
 
             if (maxFoundId > 0) {
                 let doBreak = false;
-                if (knownLastId > 0 && maxFoundId > knownLastId) {
+                if (knownLastId > 0 && maxFoundId >= knownLastId) {
                     maxFoundId = knownLastId;
                     doBreak = true;
                 }
