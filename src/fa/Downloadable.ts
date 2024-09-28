@@ -22,10 +22,6 @@ export class DownloadableFile {
         private hash: string | undefined,
     ) {
         this.url = typeof url === 'string' ? new URL(url) : url;
-        const subPath = `${this.url.host}${decodeURI(this.url.pathname)}`.replaceAll('\\', '/');
-        if (!checkPathSafe(subPath)) {
-            throw new Error(`Unsafe path: ${subPath}`);
-        }
         this.ext = path.extname(decodeURI(this.url.pathname).replaceAll('\\', '/'));
     }
 
@@ -68,6 +64,10 @@ export class DownloadableFile {
     }
 
     public async download(): Promise<void> {
+        if (!this.ext) {
+            throw new Error('File extension not found');
+        }
+
         if (await this.isDownloaded()) {
             return;
         }
