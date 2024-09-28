@@ -255,14 +255,10 @@ async function downloadNext(): Promise<void> {
         feedWatchdog();
         const results = await Promise.all(entry.downloads.map(downloadOne));
         const [mainResult] = results;
+        const [mainDownload] = entry.downloads;
         const mainResultDeleted = mainResult === FileDeleted;
-        const mainResultHash = typeof mainResult === 'string';
-        await downloadDone(
-            entry,
-            mainResultHash ? true : 'skipped',
-            mainResultDeleted,
-            mainResultHash ? mainResult : undefined,
-        );
+        const mainResultHash = mainDownload?.getHash();
+        await downloadDone(entry, mainDownload?.isDownloaded() ? true : RES_SKIP, mainResultDeleted, mainResultHash);
     } catch (error) {
         logger.error('Error on %s: %s', JSON.stringify(entry.item), error);
         setHadErrors();
