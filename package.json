@@ -23,6 +23,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "p-limit": "^6.1.0",
+    "socks-proxy-agent": "^8.0.4",
     "winston": "^3.13.1"
   },
   "devDependencies": {
