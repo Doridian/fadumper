@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Stats } from 'node:fs';
 import { rename, stat, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { checkPathSafe, mkdirp, mkdirpFor } from '../lib/utils.js';
+import { mkdirp, mkdirpFor } from '../lib/utils.js';
 import { RawAPI } from './RawAPI.js';
 
 export const DOWNLOAD_PATH = process.env.DOWNLOAD_PATH ?? './downloads';
@@ -22,10 +22,6 @@ export class DownloadableFile {
         private hash: string | undefined,
     ) {
         this.url = typeof url === 'string' ? new URL(url) : url;
-        const subPath = `${this.url.host}${decodeURI(this.url.pathname)}`.replaceAll('\\', '/');
-        if (!checkPathSafe(subPath)) {
-            throw new Error(`Unsafe path: ${subPath}`);
-        }
         this.ext = path.extname(decodeURI(this.url.pathname).replaceAll('\\', '/'));
     }
 
@@ -38,12 +34,11 @@ export class DownloadableFile {
             throw new Error('File not downloaded');
         }
 
-        return path.join(
-            HASH_PATH,
-            this.hash.slice(0, 2),
-            this.hash.slice(2, 4),
-            `${this.hash}${path.extname(this.ext)}`,
-        );
+        if (!this.ext) {
+            throw new Error('File extension not found');
+        }
+
+        return path.join(HASH_PATH, this.hash.slice(0, 2), this.hash.slice(2, 4), `${this.hash}${this.ext}`);
     }
 
     public getHash(): string {

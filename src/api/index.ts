@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-base-to-string */
-/* eslint-disable @typescript-eslint/no-misused-promises */
 import { URL } from 'node:url';
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { SearchHit } from '@elastic/elasticsearch/lib/api/types';
