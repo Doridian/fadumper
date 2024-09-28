@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Stats } from 'node:fs';
 import { rename, stat, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { checkPathSafe, mkdirp, mkdirpFor } from '../lib/utils.js';
+import { mkdirp, mkdirpFor } from '../lib/utils.js';
 import { RawAPI } from './RawAPI.js';
 
 export const DOWNLOAD_PATH = process.env.DOWNLOAD_PATH ?? './downloads';
