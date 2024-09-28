@@ -216,17 +216,23 @@ async function loopType(faType: FetchNewWithIDType) {
             }
 
             if (maxFoundId > 0) {
+                let doBreak = false;
                 if (knownLastId > 0 && maxFoundId > knownLastId) {
                     maxFoundId = knownLastId;
+                    doBreak = true;
                 }
                 // eslint-disable-next-line no-await-in-loop
                 await setMaxID(faType, maxFoundId);
+                if (doBreak) {
+                    logger.info('Reached end (in batch) %i', knownLastId);
+                    break;
+                }
             }
         } else if (knownLastId <= 0) {
             logger.info('Empty batch and unknown end. Assuming all %ss were found', faType);
             break;
         } else if (maxId > knownLastId) {
-            logger.info('Reached end %i', knownLastId);
+            logger.info('Reached end (empty batch) %i', knownLastId);
             break;
         }
     }
