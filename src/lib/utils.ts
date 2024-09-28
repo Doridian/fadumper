@@ -75,9 +75,10 @@ export function getNumericValue(val: SearchTotalHits | number | undefined): numb
 
 export const FileDeleted = Symbol('FileDeleted');
 
-export async function downloadOne(dl: DownloadableFile): Promise<string | typeof FileDeleted | undefined> {
+export async function downloadOne(dl: DownloadableFile): Promise<typeof FileDeleted | undefined> {
     try {
-        return await dl.download();
+        await dl.download();
+        return undefined;
     } catch (error) {
         if (error instanceof HttpError && (error.status === 404 || error.status === 403)) {
             return FileDeleted;
