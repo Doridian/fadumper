@@ -141,8 +141,18 @@ async function checkEnd() {
     await lockMutex.unlock();
 }
 
+interface DLURL {
+    url: string;
+    hash: string | undefined;
+}
+
 async function addSubmission(submission: ESItem<IDBSubmission>) {
-    await addURL(submission, [submission._source.image]);
+    await addURL(submission, [
+        {
+            url: submission._source.image,
+            hash: submission._source.hash,
+        },
+    ]);
 }
 
 async function addUser(user: ESItem<IDBUser>) {
@@ -150,13 +160,18 @@ async function addUser(user: ESItem<IDBUser>) {
         return;
     }
 
-    await addURL(user, [user._source.avatar]);
+    await addURL(user, [
+        {
+            url: user._source.avatar,
+            hash: user._source.hash,
+        },
+    ]);
 }
 
-async function addURL(item: ESItem<IDBDownloadable>, urls: string[]) {
+async function addURL(item: ESItem<IDBDownloadable>, urls: DLURL[]) {
     const entry: QueueEntry = {
         item,
-        downloads: urls.filter((url) => !!url).map((url) => new DownloadableFile(faRawAPI, url)),
+        downloads: urls.filter((url) => !!url.url).map((url) => new DownloadableFile(faRawAPI, url.url, url.hash)),
     };
 
     if (
@@ -169,7 +184,7 @@ async function addURL(item: ESItem<IDBDownloadable>, urls: string[]) {
     }
 
     for (const dl of entry.downloads) {
-        gotFiles.add(dl.localPath);
+        gotFiles.add(dl.getPath());
     }
 
     queue.push(entry);

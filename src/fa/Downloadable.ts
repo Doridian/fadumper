@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Stats } from 'node:fs';
-import { rename, stat, symlink, unlink } from 'node:fs/promises';
+import { rename, stat, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { checkPathSafe, mkdirp, mkdirpFor } from '../lib/utils.js';
 import { RawAPI } from './RawAPI.js';
@@ -13,23 +13,45 @@ await mkdirp(HASH_PATH);
 await mkdirp(TEMP_PATH);
 
 export class DownloadableFile {
-    public readonly localPath: string;
     public readonly url: URL;
+    public readonly ext: string;
 
     public constructor(
         private readonly rawAPI: RawAPI,
         url: URL | string,
+        private hash: string | undefined,
     ) {
         this.url = typeof url === 'string' ? new URL(url) : url;
         const subPath = `${this.url.host}${decodeURI(this.url.pathname)}`.replaceAll('\\', '/');
         if (!checkPathSafe(subPath)) {
             throw new Error(`Unsafe path: ${subPath}`);
         }
-        this.localPath = path.join(DOWNLOAD_PATH, subPath);
+        this.ext = path.extname(decodeURI(this.url.pathname).replaceAll('\\', '/'));
     }
 
     public async getInfo(): Promise<Stats> {
-        return stat(this.localPath);
+        return stat(this.getPath());
+    }
+
+    public getPath(): string {
+        if (!this.hash) {
+            throw new Error('File not downloaded');
+        }
+
+        return path.join(
+            HASH_PATH,
+            this.hash.slice(0, 2),
+            this.hash.slice(2, 4),
+            `${this.hash}${path.extname(this.ext)}`,
+        );
+    }
+
+    public getHash(): string {
+        if (!this.hash) {
+            throw new Error('File not downloaded');
+        }
+
+        return this.hash;
     }
 
     public async isDownloaded(): Promise<boolean> {
@@ -41,9 +63,9 @@ export class DownloadableFile {
         }
     }
 
-    public async download(): Promise<string | undefined> {
+    public async download(): Promise<void> {
         if (await this.isDownloaded()) {
-            return undefined;
+            return;
         }
 
         const tempFile = path.join(TEMP_PATH, randomUUID());
@@ -51,26 +73,12 @@ export class DownloadableFile {
         try {
             const hash = createHash('sha256');
 
-            await mkdirpFor(this.localPath);
             await this.rawAPI.downloadFile(this.url, tempFile, hash);
 
-            const hashDigest = hash.digest('hex');
-            const hashFile = path.join(
-                HASH_PATH,
-                hashDigest.slice(0, 2),
-                hashDigest.slice(2, 4),
-                `${hashDigest}${path.extname(this.localPath)}`,
-            );
+            this.hash = hash.digest('hex');
+            const hashFile = this.getPath();
             await mkdirpFor(hashFile);
             await rename(tempFile, hashFile);
-            try {
-                await unlink(this.localPath);
-            } catch {
-                // Ignore
-            }
-            await symlink(path.relative(path.dirname(this.localPath), hashFile), this.localPath);
-
-            return hashDigest;
         } finally {
             try {
                 await unlink(tempFile);
