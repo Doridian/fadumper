@@ -71,8 +71,6 @@ const mustNot = [{ term: { downloaded: true } }, { term: { deleted: true } }];
 
 const RES_SKIP = 'skipped';
 
-const gotFiles = new Set<string>();
-
 function setHadErrors() {
     process.exitCode = 1;
 }
@@ -181,10 +179,6 @@ async function addURL(item: ESItem<IDBDownloadable>, urls: DLURL[]) {
         inProgress++;
         await downloadDone(entry, RES_SKIP);
         return;
-    }
-
-    for (const dl of entry.downloads) {
-        gotFiles.add(dl.getPath());
     }
 
     queue.push(entry);

@@ -55,6 +55,10 @@ export class DownloadableFile {
     }
 
     public async isDownloaded(): Promise<boolean> {
+        if (!this.hash) {
+            return false;
+        }
+
         try {
             const info = await this.getInfo();
             return info.isFile();
