@@ -220,6 +220,7 @@ async function downloadDone(entry: QueueEntry, success: boolean | 'skipped', fil
             doc.hash = fileHash;
         } else if (success !== RES_SKIP) {
             logger.error('No hash for %s', JSON.stringify(entry.item));
+            return;
         }
     } else if (fileDeleted) {
         doc.deleted = true;
