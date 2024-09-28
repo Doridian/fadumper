@@ -34,12 +34,11 @@ export class DownloadableFile {
             throw new Error('File not downloaded');
         }
 
-        return path.join(
-            HASH_PATH,
-            this.hash.slice(0, 2),
-            this.hash.slice(2, 4),
-            `${this.hash}${path.extname(this.ext)}`,
-        );
+        if (!this.ext) {
+            throw new Error('File extension not found');
+        }
+
+        return path.join(HASH_PATH, this.hash.slice(0, 2), this.hash.slice(2, 4), `${this.hash}${this.ext}`);
     }
 
     public getHash(): string {
@@ -64,10 +63,6 @@ export class DownloadableFile {
     }
 
     public async download(): Promise<void> {
-        if (!this.ext) {
-            throw new Error('File extension not found');
-        }
-
         if (await this.isDownloaded()) {
             return;
         }
