@@ -23,7 +23,7 @@ const GLOBAL_HTTP_AGENT = ((): (HttpAgent & HttpsAgent) | undefined => {
     if (url.protocol !== 'socks:' && url.protocol !== 'socks4:' && url.protocol !== 'socks5:') {
         return undefined;
     }
-    return new SocksProxyAgent(url);
+    return new SocksProxyAgent(url, { keepAlive: true });
 })();
 
 const HTTP_AGENT = GLOBAL_HTTP_AGENT ?? new HttpAgent({ keepAlive: true });
