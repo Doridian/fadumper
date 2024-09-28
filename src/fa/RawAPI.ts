@@ -5,6 +5,7 @@ import { Agent as HttpsAgent } from 'node:https';
 import { Stream } from 'node:stream';
 import axios, { AxiosError, AxiosProxyConfig, AxiosResponse, ResponseType } from 'axios';
 import { CheerioAPI, load as cheerioLoad } from 'cheerio';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 import { logger } from '../lib/log.js';
 import { delay } from '../lib/utils.js';
 
@@ -14,14 +15,28 @@ const HTTP_STREAM_TIMEOUT = Number.parseInt(process.env.HTTP_STREAM_TIMEOUT ?? '
 
 const ERROR_UNKNOWN = new Error('Unknown error, this should not happen');
 
-const HTTP_AGENT = new HttpAgent({ keepAlive: true });
-const HTTPS_AGENT = new HttpsAgent({ keepAlive: true });
+const GLOBAL_HTTP_AGENT = ((): (HttpAgent & HttpsAgent) | undefined => {
+    if (!process.env.PROXY_URL) {
+        return undefined;
+    }
+    const url = new URL(process.env.PROXY_URL);
+    if (url.protocol !== 'socks:' && url.protocol !== 'socks4:' && url.protocol !== 'socks5:') {
+        return undefined;
+    }
+    return new SocksProxyAgent(url, { keepAlive: true });
+})();
+
+const HTTP_AGENT = GLOBAL_HTTP_AGENT ?? new HttpAgent({ keepAlive: true });
+const HTTPS_AGENT = GLOBAL_HTTP_AGENT ?? new HttpsAgent({ keepAlive: true });
 
 const AXIOS_PROXY_CONFIG = ((): AxiosProxyConfig | undefined => {
     if (!process.env.PROXY_URL) {
         return undefined;
     }
     const url = new URL(process.env.PROXY_URL);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return undefined;
+    }
     return {
         host: url.hostname,
         port: Number.parseInt(url.port, 10),
