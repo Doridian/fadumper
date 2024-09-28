@@ -262,7 +262,7 @@ async function downloadNext(): Promise<void> {
         const [mainResult] = results;
         const [mainDownload] = entry.downloads;
         const mainResultDeleted = mainResult === FileDeleted;
-        const mainResultHash = mainDownload?.getHash();
+        const mainResultHash = mainResultDeleted ? undefined : mainDownload?.getHash();
         await downloadDone(entry, mainDownload?.isDownloaded() ? true : RES_SKIP, mainResultDeleted, mainResultHash);
     } catch (error) {
         logger.error('Error on %s: %s', JSON.stringify(entry.item), error);
