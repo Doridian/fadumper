@@ -169,13 +169,20 @@ async function addUser(user: ESItem<IDBUser>) {
 async function addURL(item: ESItem<IDBDownloadable>, urls: DLURL[]) {
     const entry: QueueEntry = {
         item,
-        downloads: urls.filter((url) => !!url.url).map((url) => new DownloadableFile(faRawAPI, url.url, url.hash)),
+        downloads: urls.map((url) => {
+            if (!url.url) {
+                throw new Error(`No URL: ${JSON.stringify(item._source)} -> ${JSON.stringify(url)}`);
+            }
+
+            return new DownloadableFile(faRawAPI, url.url, url.hash);
+        }),
     };
 
-    if (
-        entry.downloads.length < 1 ||
-        (await Promise.all(entry.downloads.map(async (dl) => dl.isDownloaded()))).every(Boolean)
-    ) {
+    if (entry.downloads.length < 1) {
+        throw new Error(`No URLs: ${JSON.stringify(item._source)}`);
+    }
+
+    if ((await Promise.all(entry.downloads.map(async (dl) => dl.isDownloaded()))).every(Boolean)) {
         inProgress++;
         await downloadDone(entry, RES_SKIP);
         return;
