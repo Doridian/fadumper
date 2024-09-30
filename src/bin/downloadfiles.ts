@@ -136,7 +136,13 @@ async function checkEnd() {
 
     await esRunBatchUpdate(1);
 
-    await lockMutex.unlock();
+    try {
+        await lockMutex.unlock();
+    } catch {
+        // ignore
+    }
+
+    process.exit(process.exitCode);
 }
 
 interface DLURL {
