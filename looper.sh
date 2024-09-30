@@ -10,6 +10,7 @@ do
 	echo 'Retrying fetch'
 	sleep 10
 done
+echo 'Done fetch'
 sleep 10
 
 export PROXY_URL="${LOOPER_DOWNLOADFILES_PROXY_URL-}"
@@ -20,6 +21,7 @@ do
 	echo 'Retrying DL submission'
 	sleep 10
 done
+echo 'Done DL submission'
 sleep 10
 
 echo 'DL user'
@@ -28,4 +30,5 @@ do
 	echo 'Retrying DL user'
 	sleep 10
 done
+echo 'Done DL user'
 sleep 10
