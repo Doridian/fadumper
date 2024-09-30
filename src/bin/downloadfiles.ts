@@ -137,6 +137,8 @@ async function checkEnd() {
 
     await esRunBatchUpdate(1);
 
+    printStats();
+
     try {
         await lockMutex.unlock();
     } catch {
