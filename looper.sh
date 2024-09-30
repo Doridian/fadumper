@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 export PROXY_URL="${LOOPER_FETCHNEW_PROXY_URL-}"
 
 echo 'Fetch'
