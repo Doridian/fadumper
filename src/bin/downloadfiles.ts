@@ -16,7 +16,8 @@ const argParse = new ArgumentParser({
 });
 argParse.add_argument('-t', '--type', { default: 'submission' });
 argParse.add_argument('-l', '--looper', { action: 'store_true' });
-const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean };
+argParse.add_argument('--touch', { action: 'store_true' });
+const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean; touch: boolean };
 
 const PER_RUN_LIMIT = Number.parseInt(process.env.DOWNLOADFILES_PER_RUN_LIMIT ?? '100000', 10);
 const WATCHDOG_TIMEOUT = Number.parseInt(process.env.DOWNLOADFILES_WATCHDOG_TIMEOUT ?? '180', 10) * 1000;
@@ -190,6 +191,9 @@ async function addURL(item: ESItem<IDBDownloadable>, urls: DLURL[]) {
 
     if ((await Promise.all(entry.downloads.map(async (dl) => dl.isDownloaded()))).every(Boolean)) {
         inProgress++;
+        if (ARGS.touch) {
+            await Promise.all(entry.downloads.map(async (dl) => dl.touch()));
+        }
         await downloadDone(entry, RES_SKIP);
         return;
     }

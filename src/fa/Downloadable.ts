@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Stats } from 'node:fs';
-import { rename, stat, unlink } from 'node:fs/promises';
+import { rename, stat, unlink, utimes } from 'node:fs/promises';
 import path from 'node:path';
 import { mkdirp, mkdirpFor } from '../lib/utils.js';
 import { RawAPI } from './RawAPI.js';
@@ -58,6 +58,13 @@ export class DownloadableFile {
         } catch {
             return false;
         }
+    }
+
+    public async touch(): Promise<void> {
+        const hashFile = this.getPath();
+
+        const now = new Date();
+        await utimes(hashFile, now, now);
     }
 
     public async download(): Promise<void> {
