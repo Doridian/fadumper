@@ -20,6 +20,7 @@ export class DownloadableFile {
         private readonly rawAPI: RawAPI,
         url: URL | string,
         private hash: string | undefined,
+        private readonly touchOnRepeat: boolean,
     ) {
         this.url = typeof url === 'string' ? new URL(url) : url;
         this.ext = path.extname(decodeURI(this.url.pathname).replaceAll('\\', '/'));
@@ -69,6 +70,9 @@ export class DownloadableFile {
 
     public async download(): Promise<void> {
         if (await this.isDownloaded()) {
+            if (this.touchOnRepeat) {
+                await this.touch();
+            }
             return;
         }
 

@@ -181,7 +181,7 @@ async function addURL(item: ESItem<IDBDownloadable>, urls: DLURL[]) {
                 throw new Error(`No URL: ${JSON.stringify(item._source)} -> ${JSON.stringify(url)}`);
             }
 
-            return new DownloadableFile(faRawAPI, url.url, url.hash);
+            return new DownloadableFile(faRawAPI, url.url, url.hash, ARGS.touch);
         }),
     };
 
