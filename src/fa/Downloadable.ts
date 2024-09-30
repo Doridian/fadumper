@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Stats } from 'node:fs';
-import { rename, stat, unlink } from 'node:fs/promises';
+import { rename, stat, unlink, utimes } from 'node:fs/promises';
 import path from 'node:path';
 import { mkdirp, mkdirpFor } from '../lib/utils.js';
 import { RawAPI } from './RawAPI.js';
@@ -20,6 +20,7 @@ export class DownloadableFile {
         private readonly rawAPI: RawAPI,
         url: URL | string,
         private hash: string | undefined,
+        private readonly touchOnRepeat: boolean,
     ) {
         this.url = typeof url === 'string' ? new URL(url) : url;
         this.ext = path.extname(decodeURI(this.url.pathname).replaceAll('\\', '/'));
@@ -60,8 +61,18 @@ export class DownloadableFile {
         }
     }
 
+    public async touch(): Promise<void> {
+        const hashFile = this.getPath();
+
+        const now = new Date();
+        await utimes(hashFile, now, now);
+    }
+
     public async download(): Promise<void> {
         if (await this.isDownloaded()) {
+            if (this.touchOnRepeat) {
+                await this.touch();
+            }
             return;
         }
 
