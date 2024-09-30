@@ -18,6 +18,7 @@ async function main(): Promise<void> {
         rawAPI,
         'https://t.furaffinity.net/9380872@600-1354491506.jpg',
         '90989aeef4cec5ecea69cda1d8e2f1560e4cf3c34825ca1656d3ba22820bef33',
+        false,
     );
 
     logger.info('DL1 %s', await dl.isDownloaded());
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
         rawAPI,
         'https://t.furaffinity.net/9380872@600-1354491506.jpg',
         '90989aeef4cec5ecea69cda1d8e2f1560e4cf3c34825ca1656d3ba22820bef44',
+        false,
     );
 
     logger.info('DL2 %s', await dl2.isDownloaded());
