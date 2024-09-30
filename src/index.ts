@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/numeric-separators-style */
 import { configDotenv } from 'dotenv';
 import { DownloadableFile } from './fa/Downloadable.js';
 import { RawAPI } from './fa/RawAPI.js';
