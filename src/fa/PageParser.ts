@@ -74,7 +74,7 @@ export class PageParser {
     public static parseJournal($: CheerioAPI, reqUrl: URL): Omit<IJournal, 'id'> {
         return {
             title: $('div.journal-title').text().trim(),
-            createdBy: PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a'), $('h1 username')),
+            createdBy: PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a').first(), $('h1 username').first()),
             description: PageParser.parseHTMLUserContent($, $('div.journal-content'), reqUrl),
             createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
@@ -82,7 +82,11 @@ export class PageParser {
 
     public static parsesUserPage($: CheerioAPI, reqUrl: URL): IUser {
         const avatar = $('userpage-nav-avatar img').attr('src');
-        const userPreview = PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a'), $('h1 username'));
+        const userPreview = PageParser.parseUserAnchor(
+            reqUrl,
+            $('userpage-nav-avatar a').first(),
+            $('h1 username').first(),
+        );
 
         const userTitle = $('username.user-title').text().trim().split('|');
         const userType = userTitle[0]?.trim() ?? '';
@@ -132,7 +136,7 @@ export class PageParser {
             id: Number.parseInt(PageParser.parseSubmissionAnchor(elem.find('a')) ?? 'x', 10),
             thumbnail: new URL(elem.find('img').attr('src') ?? '', reqUrl),
             title: figCaption.find('p:first').text().trim(),
-            createdBy: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a')),
+            createdBy: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a').first()),
         };
     }
 
