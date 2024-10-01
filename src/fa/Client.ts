@@ -105,7 +105,7 @@ export class Client {
     }
 
     public async getUserpage(userID: string, passthruErrors = false): Promise<IUser> {
-        const url = new URL(`/user/${userID}/`, RawAPI.BASE_URL);
+        const url = new URL(`/user/${encodeURIComponent(userID)}/`, RawAPI.BASE_URL);
         return PageParser.parsesUserPage(await this.rawAPI.fetchHTML(url, HTTP_RETRIES, passthruErrors), url);
     }
 
@@ -114,7 +114,7 @@ export class Client {
             throw new Error('Page must be >= 1');
         }
 
-        const url = new URL(`/journals/${userID}/${page}/`, RawAPI.BASE_URL);
+        const url = new URL(`/journals/${encodeURIComponent(userID)}/${page}/`, RawAPI.BASE_URL);
         const $ = await this.rawAPI.fetchHTML(url);
 
         const createdBy = PageParser.parseUserAnchor(
@@ -143,7 +143,7 @@ export class Client {
             throw new Error('Page must be >= 1');
         }
 
-        const url = new URL(`/${category}/${userID}/${page}/`, RawAPI.BASE_URL);
+        const url = new URL(`/${category}/${encodeURIComponent(userID)}/${page}/`, RawAPI.BASE_URL);
         const $ = await this.rawAPI.fetchHTML(url);
 
         const items = $('figure').map((_, elem) => {
