@@ -5,7 +5,7 @@ import { Client as ESClient } from '@elastic/elasticsearch';
 import { ArgumentParser } from 'argparse';
 import { configDotenv } from 'dotenv';
 import pLimit from 'p-limit';
-import { IDBDownloadable, IDBJournal, IDBSubmission } from '../db/models.js';
+import { IDBJournal, IDBSubmission } from '../db/models.js';
 import { Client as FAClient } from '../fa/Client.js';
 import { DOWNLOAD_PATH } from '../fa/Downloadable.js';
 import { HttpError, RawAPI } from '../fa/RawAPI.js';
@@ -48,7 +48,7 @@ interface ESBulkOperation<I extends string> {
 
 interface ESPostDoc {
     doc_as_upsert: true;
-    doc: IDBDownloadable;
+    doc: { id: number };
 }
 
 type ESQueueEntry = ESBulkOperation<string> | ESPostDoc;
@@ -118,16 +118,13 @@ async function loopType(faType: FetchNewWithIDType) {
 
         const fetchOne = async (i: number) => {
             logger.info('Fetching %s %i', faType, i);
-            let doc: { id: number; downloaded: boolean; deleted: boolean; hash: string };
+            let doc: { id: number };
             try {
                 switch (faType) {
                     case 'journal': {
                         const journal = await faClient.getJournal(i);
-                        const dbJournal: IDBJournal = {
+                        const dbJournal: Omit<IDBJournal, 'deleted' | 'downloaded' | 'hash'> = {
                             ...journal,
-                            downloaded: true,
-                            deleted: false,
-                            hash: '',
                             createdBy: journal.createdBy.id,
                             createdByUsername: journal.createdBy.name,
                             description: journal.description.text,
@@ -140,12 +137,9 @@ async function loopType(faType: FetchNewWithIDType) {
                     }
                     case 'submission': {
                         const submission = await faClient.getSubmission(i);
-                        const dbSubmission: IDBSubmission = {
+                        const dbSubmission: Omit<IDBSubmission, 'deleted' | 'downloaded' | 'hash'> = {
                             ...submission,
-                            downloaded: false,
-                            deleted: false,
                             image: submission.image.href,
-                            hash: '',
                             thumbnail: submission.thumbnail?.href ?? '',
                             tags: [...submission.tags],
                             createdBy: submission.createdBy.id,
