@@ -112,6 +112,10 @@ export class PageParser {
             name = name.slice(1);
         }
 
+        if (name.length !== id.length) {
+            throw new Error(`Name and ID length mismatch: ${name} vs ${id}`);
+        }
+
         return {
             id,
             name,
