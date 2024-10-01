@@ -20,6 +20,7 @@ const faRawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
 const faClient = new Client(faRawAPI);
 
 const handledUsernames = new Set<string>();
+const handledSubmissions = new Set<number>();
 
 const failedUserProfiles = new Set<string>();
 async function tryViaUserProfile(userID: string): Promise<string | undefined> {
@@ -61,6 +62,11 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
         if (handledUsernames.has(typedHit._source.createdBy)) {
             continue;
         }
+
+        if (handledSubmissions.has(typedHit._source.id)) {
+            continue;
+        }
+        handledSubmissions.add(typedHit._source.id);
 
         let newUsername;
         try {
