@@ -151,7 +151,7 @@ export class PageParser {
             id: Number.parseInt(PageParser.parseSubmissionAnchor(elem.find('a')) ?? 'x', 10),
             thumbnail: new URL(elem.find('img').attr('src') ?? '', reqUrl),
             title: figCaption.find('p:first').text().trim(),
-            createdBy: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a').first()),
+            createdBy: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a').first(), false),
         };
     }
 
