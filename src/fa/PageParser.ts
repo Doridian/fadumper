@@ -112,7 +112,7 @@ export class PageParser {
         elem: Cheerio<Element>,
         nameHasPrefix: boolean,
         nameElem?: Cheerio<Element>,
-        dontValidateName = false,
+        nameOptional = false,
     ): IUserPreview {
         const id = PageParser.USER_ID_REGEX.exec(new URL(elem.attr('href') ?? '', reqUrl).pathname.toLowerCase())?.[1];
         if (!id) {
@@ -128,7 +128,7 @@ export class PageParser {
             name = name.slice(1);
         }
 
-        if (dontValidateName) {
+        if (nameOptional && !name) {
             return {
                 id,
                 name,
