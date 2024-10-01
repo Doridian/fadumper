@@ -26,7 +26,7 @@ curl -v -XPOST -H 'Content-Type: application/json' 'http://elasticsearch:9200/fa
     },
     "script":
     {
-        "source": "ctx._source.createdByUsername = "'"${USERNAME}"'";",
+        "source": "ctx._source.createdByUsername = '"'${USERNAME}'"';",
         "lang": "painless"
     }
 }'
