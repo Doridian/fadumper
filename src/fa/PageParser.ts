@@ -266,199 +266,205 @@ export class PageParser {
             return userPreview;
         };
 
-        for (const child of elem.contents()) {
-            if (child.type === ElementType.Text) {
-                addToResult(child.data.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_PRE, ' '));
-                continue;
-            }
+        if (elem.html() === '<i>Not Available...</i>') {
+            addToResult('Not Available...');
+        } else {
+            for (const child of elem.contents()) {
+                if (child.type === ElementType.Text) {
+                    addToResult(child.data.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_PRE, ' '));
+                    continue;
+                }
 
-            if (child.type !== ElementType.Tag) {
-                continue;
-            }
+                if (child.type !== ElementType.Tag) {
+                    continue;
+                }
 
-            const childCheerio = $(child);
-            let handled = false;
+                const childCheerio = $(child);
+                let handled = false;
 
-            switch (child.tagName.toLowerCase()) {
-                case 'br':
-                    content.text += '\n'; // Do not call addToResult as this never gets whitespaces
-                    handled = true;
-                    break;
-                case 'a':
-                    if (childCheerio.hasClass('iconusername')) {
-                        const hasUsernameSuffix = !!childCheerio.text().trim();
-                        const userPreview = parseUserAnchorSafe(childCheerio);
-                        addToResult(hasUsernameSuffix ? `:icon${userPreview.name}:` : `:${userPreview.name}icon:`);
+                switch (child.tagName.toLowerCase()) {
+                    case 'br':
+                        content.text += '\n'; // Do not call addToResult as this never gets whitespaces
                         handled = true;
                         break;
-                    }
-
-                    if (childCheerio.hasClass('linkusername')) {
-                        const userPreview = parseUserAnchorSafe(childCheerio);
-                        addToResult(`:link${userPreview.name}:`);
-                        handled = true;
-                        break;
-                    }
-
-                    if (childCheerio.hasClass('named_url') || childCheerio.hasClass('auto_link')) {
-                        const href = childCheerio.attr('href');
-                        checkLinkToAddSafe(href);
-                        addToResult(`[url=${href}]`);
-                        PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
-                        addToResult('[/url]');
-                        handled = true;
-                        break;
-                    }
-
-                    handled = true;
-                    logger.warn('Unhandled link: %s', childCheerio.toString());
-                    break;
-                case 'wbr':
-                    handled = true;
-                    break;
-                case 'strong':
-                case 'code':
-                case 'span':
-                case 'sup':
-                case 'sub':
-                case 'u':
-                case 'b':
-                case 's':
-                case 'i':
-                case 'h1':
-                case 'h2':
-                case 'h3':
-                case 'h4':
-                case 'h5':
-                case 'h6':
-                case 'p':
-                case 'div':
-                    // These footers are silly
-                    if (childCheerio.hasClass('submission-footer')) {
-                        handled = true;
-                        break;
-                    }
-
-                    if (childCheerio.hasClass('bbcode')) {
-                        const style = childCheerio.css('color');
-                        if (style) {
-                            addToResult(`[color=${style}]`);
+                    case 'a':
+                        if (childCheerio.hasClass('iconusername')) {
+                            const hasUsernameSuffix = !!childCheerio.text().trim();
+                            const userPreview = parseUserAnchorSafe(childCheerio);
+                            addToResult(hasUsernameSuffix ? `:icon${userPreview.name}:` : `:${userPreview.name}icon:`);
                             handled = true;
                             break;
                         }
 
-                        if (childCheerio.hasClass('bbcode_quote')) {
-                            const nameEle = childCheerio.find('.bbcode_quote_name');
-                            let authorName = nameEle.text().trim();
-                            if (authorName.endsWith(PageParser.QUOTE_NAME_SUFFIX)) {
-                                authorName = authorName.slice(0, -PageParser.QUOTE_NAME_SUFFIX.length).trim();
-                            }
-                            nameEle.remove();
-                            if (authorName) {
-                                addToResult(`[quote=${authorName}]`);
-                            } else {
-                                addToResult('[quote]');
-                            }
+                        if (childCheerio.hasClass('linkusername')) {
+                            const userPreview = parseUserAnchorSafe(childCheerio);
+                            addToResult(`:link${userPreview.name}:`);
+                            handled = true;
+                            break;
+                        }
+
+                        if (childCheerio.hasClass('named_url') || childCheerio.hasClass('auto_link')) {
+                            const href = childCheerio.attr('href');
+                            checkLinkToAddSafe(href);
+                            addToResult(`[url=${href}]`);
                             PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
-                            addToResult('[/quote]');
+                            addToResult('[/url]');
                             handled = true;
                             break;
                         }
 
-                        const allBBCodeTags = new Set<string>();
-                        for (const className of childCheerio.attr('class')?.split(' ') ?? []) {
-                            const match = /^bbcode_(.+)$/.exec(className);
-                            const tag = match?.[1];
-                            if (tag) {
-                                allBBCodeTags.add(tag.toLowerCase());
-                            }
+                        handled = true;
+                        logger.warn('Unhandled link: %s', childCheerio.toString());
+                        break;
+                    case 'wbr':
+                        handled = true;
+                        break;
+                    case 'strong':
+                    case 'code':
+                    case 'span':
+                    case 'sup':
+                    case 'sub':
+                    case 'u':
+                    case 'b':
+                    case 's':
+                    case 'i':
+                    case 'h1':
+                    case 'h2':
+                    case 'h3':
+                    case 'h4':
+                    case 'h5':
+                    case 'h6':
+                    case 'p':
+                    case 'div':
+                        // These footers are silly
+                        if (childCheerio.hasClass('submission-footer')) {
+                            handled = true;
+                            break;
                         }
 
-                        for (const tagType of [
-                            'b',
-                            'i',
-                            'u',
-                            's',
-                            'sup',
-                            'sub',
-                            'center',
-                            'right',
-                            'left',
-                            'h1',
-                            'h2',
-                            'h3',
-                            'h4',
-                            'h5',
-                            'h6',
-                            'spoiler',
-                        ]) {
-                            if (!allBBCodeTags.has(tagType)) {
-                                continue;
+                        if (childCheerio.hasClass('bbcode')) {
+                            const style = childCheerio.css('color');
+                            if (style) {
+                                addToResult(`[color=${style}]`);
+                                PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
+                                addToResult('[/color]');
+                                handled = true;
+                                break;
                             }
 
-                            addToResult(`[${tagType}]`);
-                            PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
-                            addToResult(`[/${tagType}]`);
+                            if (childCheerio.hasClass('bbcode_quote')) {
+                                const nameEle = childCheerio.find('.bbcode_quote_name');
+                                let authorName = nameEle.text().trim();
+                                if (authorName.endsWith(PageParser.QUOTE_NAME_SUFFIX)) {
+                                    authorName = authorName.slice(0, -PageParser.QUOTE_NAME_SUFFIX.length).trim();
+                                }
+                                nameEle.remove();
+                                if (authorName) {
+                                    addToResult(`[quote=${authorName}]`);
+                                } else {
+                                    addToResult('[quote]');
+                                }
+                                PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
+                                addToResult('[/quote]');
+                                handled = true;
+                                break;
+                            }
+
+                            const allBBCodeTags = new Set<string>();
+                            for (const className of childCheerio.attr('class')?.split(' ') ?? []) {
+                                const match = /^bbcode_(.+)$/.exec(className);
+                                const tag = match?.[1];
+                                if (tag) {
+                                    allBBCodeTags.add(tag.toLowerCase());
+                                }
+                            }
+
+                            for (const tagType of [
+                                'b',
+                                'i',
+                                'u',
+                                's',
+                                'sup',
+                                'sub',
+                                'center',
+                                'right',
+                                'left',
+                                'h1',
+                                'h2',
+                                'h3',
+                                'h4',
+                                'h5',
+                                'h6',
+                                'spoiler',
+                            ]) {
+                                if (!allBBCodeTags.has(tagType)) {
+                                    continue;
+                                }
+
+                                addToResult(`[${tagType}]`);
+                                PageParser.parseHTMLUserContentInner($, childCheerio, reqUrl, content);
+                                addToResult(`[/${tagType}]`);
+                                handled = true;
+                                break;
+                            }
+
+                            break;
+                        }
+
+                        if (childCheerio.hasClass('parsed_nav_links')) {
+                            const prevLink =
+                                PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("PREV")')) ?? '-';
+                            const firstLink =
+                                PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("FIRST")')) ?? '-';
+                            const nextLink =
+                                PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("NEXT")')) ?? '-';
+
+                            if (prevLink !== '-') {
+                                content.refersToSubmissions.add(Number.parseInt(prevLink, 10));
+                            }
+
+                            if (firstLink !== '-') {
+                                content.refersToSubmissions.add(Number.parseInt(firstLink, 10));
+                            }
+
+                            if (nextLink !== '-') {
+                                content.refersToSubmissions.add(Number.parseInt(nextLink, 10));
+                            }
+
+                            addToResult(`[${prevLink},${firstLink},${nextLink}]`);
+
+                            handled = true;
+                            break;
+                        }
+
+                        if (childCheerio.hasClass('youtubeWrapper')) {
+                            const videoId = childCheerio.find('iframe').attr('src')?.split('/').pop()?.split('?')[0];
+                            if (videoId) {
+                                addToResult(`[yt]${videoId}[/yt]`);
+                            }
+                            handled = true;
+                            break;
+                        }
+
+                        if (childCheerio.hasClass('smilie')) {
+                            // Ignore smilies, they are not useful as metadata anyway
                             handled = true;
                             break;
                         }
 
                         break;
-                    }
-
-                    if (childCheerio.hasClass('parsed_nav_links')) {
-                        const prevLink =
-                            PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("PREV")')) ?? '-';
-                        const firstLink =
-                            PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("FIRST")')) ?? '-';
-                        const nextLink =
-                            PageParser.parseSubmissionAnchor(childCheerio.find('a:contains("NEXT")')) ?? '-';
-
-                        if (prevLink !== '-') {
-                            content.refersToSubmissions.add(Number.parseInt(prevLink, 10));
-                        }
-
-                        if (firstLink !== '-') {
-                            content.refersToSubmissions.add(Number.parseInt(firstLink, 10));
-                        }
-
-                        if (nextLink !== '-') {
-                            content.refersToSubmissions.add(Number.parseInt(nextLink, 10));
-                        }
-
-                        addToResult(`[${prevLink},${firstLink},${nextLink}]`);
-
+                    case 'hr':
+                        content.text += '\n-----\n';
                         handled = true;
                         break;
-                    }
+                }
 
-                    if (childCheerio.hasClass('youtubeWrapper')) {
-                        const videoId = childCheerio.find('iframe').attr('src')?.split('/').pop()?.split('?')[0];
-                        if (videoId) {
-                            addToResult(`[yt]${videoId}[/yt]`);
-                        }
-                        handled = true;
-                        break;
-                    }
+                if (handled) {
+                    continue;
+                }
 
-                    if (childCheerio.hasClass('smilie')) {
-                        // Ignore smilies, they are not useful as metadata anyway
-                        handled = true;
-                        break;
-                    }
-
-                    break;
-                case 'hr':
-                    content.text += '\n-----\n';
-                    handled = true;
-                    break;
+                throw new Error(`Unhandled element: ${childCheerio.toString()}`);
             }
-
-            if (handled) {
-                continue;
-            }
-
-            throw new Error(`Unhandled element: ${childCheerio.toString()}`);
         }
 
         content.text = content.text.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_POST, '$1').trim();
