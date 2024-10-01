@@ -112,6 +112,7 @@ export class PageParser {
         elem: Cheerio<Element>,
         nameHasPrefix: boolean,
         nameElem?: Cheerio<Element>,
+        nameOptional = false,
     ): IUserPreview {
         const id = PageParser.USER_ID_REGEX.exec(new URL(elem.attr('href') ?? '', reqUrl).pathname.toLowerCase())?.[1];
         if (!id) {
@@ -125,6 +126,13 @@ export class PageParser {
         name = name.trim();
         if (nameHasPrefix) {
             name = name.slice(1);
+        }
+
+        if (nameOptional && !name) {
+            return {
+                id,
+                name,
+            };
         }
 
         const idFixLength = id.replaceAll('_', '').length;
@@ -265,7 +273,7 @@ export class PageParser {
         const parseUserAnchorSafe = (childCheerio: Cheerio<Element>): IUserPreview => {
             let userPreview;
             try {
-                userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio, false);
+                userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio, false, undefined, true);
             } catch {
                 return {
                     id: '',
