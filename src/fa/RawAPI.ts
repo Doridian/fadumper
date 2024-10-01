@@ -160,6 +160,11 @@ export class RawAPI {
                     continue;
                 }
 
+                // eslint-disable-next-line max-depth
+                if (passthruErrors) {
+                    throw error;
+                }
+
                 if (error instanceof FASystemError) {
                     const msg = error.faMessage.toLowerCase();
                     if (
@@ -169,10 +174,6 @@ export class RawAPI {
                         ) ||
                         msg.includes('has voluntarily disabled access to their account and all of its contents')
                     ) {
-                        // eslint-disable-next-line max-depth
-                        if (passthruErrors) {
-                            throw error;
-                        }
                         throw new HttpError(404, url);
                     }
                 }
