@@ -85,7 +85,12 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
             continue;
         }
 
-        assertUsernameToIDValid(typedHit._source.createdBy, newUsername);
+        try {
+            assertUsernameToIDValid(typedHit._source.createdBy, newUsername);
+        } catch (error) {
+            logger.error('Error validating user %s -> %s: %s', typedHit._source.createdBy, newUsername, error);
+            continue;
+        }
 
         logger.info(
             'Rewriting user %s to username %s -> %s',
