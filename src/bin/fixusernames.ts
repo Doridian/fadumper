@@ -70,6 +70,7 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
         // eslint-disable-next-line no-await-in-loop
         await client.updateByQuery({
             index: 'fa_submissions',
+            timeout: '1h',
             body: {
                 script: {
                     source: 'ctx._source.createdByUsername = params.newUsername;',
