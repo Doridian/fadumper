@@ -32,7 +32,7 @@ async function tryViaUserProfile(userID: string): Promise<string | undefined> {
         return user.name;
     } catch (error) {
         if (error instanceof FASystemError) {
-            const $ = cheerioLoad(error.rawHTML);
+            const $ = cheerioLoad(error.getRawHTML());
             for (const lnk of $('a')) {
                 const { href } = lnk.attribs;
                 const text = $(lnk).text();
