@@ -266,7 +266,7 @@ export class PageParser {
             return userPreview;
         };
 
-        if (elem.text() === 'Not Available...') {
+        if (elem.html() === '<i>Not Available...</i>') {
             addToResult('Not Available...');
         } else {
             for (const child of elem.contents()) {
