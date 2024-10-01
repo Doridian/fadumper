@@ -114,10 +114,14 @@ export class PageParser {
         nameElem?: Cheerio<Element>,
         nameOptional = false,
     ): IUserPreview {
-        const id = PageParser.USER_ID_REGEX.exec(new URL(elem.attr('href') ?? '', reqUrl).pathname.toLowerCase())?.[1];
-        if (!id) {
+        const idRaw = PageParser.USER_ID_REGEX.exec(
+            new URL(elem.attr('href') ?? '', reqUrl).pathname.toLowerCase(),
+        )?.[1];
+        if (!idRaw) {
             throw new Error(`Could not parse user anchor: ${elem.toString()}`);
         }
+
+        const id = decodeURIComponent(idRaw);
 
         let name = (nameElem ?? elem).text();
         if (!name) {
