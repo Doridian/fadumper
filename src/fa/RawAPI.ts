@@ -9,7 +9,7 @@ import { SocksProxyAgent } from 'socks-proxy-agent';
 import { logger } from '../lib/log.js';
 import { delay } from '../lib/utils.js';
 
-const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '10', 10);
+export const HTTP_RETRIES = Number.parseInt(process.env.HTTP_RETRIES ?? '10', 10);
 const HTTP_FETCH_TIMEOUT = Number.parseInt(process.env.HTTP_FETCH_TIMEOUT ?? '10000', 10);
 const HTTP_STREAM_TIMEOUT = Number.parseInt(process.env.HTTP_STREAM_TIMEOUT ?? '30000', 10);
 
@@ -128,7 +128,7 @@ export class RawAPI {
         });
     }
 
-    public async fetchHTML(url: URL, retries: number = HTTP_RETRIES): Promise<CheerioAPI> {
+    public async fetchHTML(url: URL, retries: number = HTTP_RETRIES, passthruErrors = false): Promise<CheerioAPI> {
         let response;
         let lastError: unknown = ERROR_UNKNOWN;
         for (let tryNum = 0; tryNum < retries; tryNum++) {
@@ -169,6 +169,10 @@ export class RawAPI {
                         ) ||
                         msg.includes('has voluntarily disabled access to their account and all of its contents')
                     ) {
+                        // eslint-disable-next-line max-depth
+                        if (passthruErrors) {
+                            throw error;
+                        }
                         throw new HttpError(404, url);
                     }
                 }

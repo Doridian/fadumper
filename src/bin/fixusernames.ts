@@ -27,7 +27,7 @@ async function tryViaUserProfile(userID: string): Promise<string | undefined> {
     }
 
     try {
-        const user = await faClient.getUserpage(userID);
+        const user = await faClient.getUserpage(userID, true);
         return user.name;
     } catch (error) {
         logger.warn('Error fetching user profile %s: %s', userID, error);
