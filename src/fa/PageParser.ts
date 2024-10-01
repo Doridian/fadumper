@@ -5,6 +5,7 @@ import { Cheerio, CheerioAPI } from 'cheerio';
 import { ElementType } from 'domelementtype';
 import { Element } from 'domhandler';
 import { logger } from '../lib/log.js';
+import { assertUsernameToIDValid } from '../lib/useridcheck.js';
 import {
     IJournal,
     IPaginatedResponse,
@@ -139,13 +140,7 @@ export class PageParser {
             };
         }
 
-        const idFixLength = id.replaceAll('_', '').length;
-        const nameFixLength = name.replaceAll('_', '').length;
-        if (idFixLength !== nameFixLength) {
-            throw new Error(
-                `ID and Name fix length mismatch: "${id}" (${idFixLength}) vs "${name}" (${nameFixLength})`,
-            );
-        }
+        assertUsernameToIDValid(id, name);
 
         return {
             id,

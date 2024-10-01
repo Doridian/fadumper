@@ -6,6 +6,7 @@ import { ESItem, IDBSubmission } from '../db/models.js';
 import { Client } from '../fa/Client.js';
 import { FASystemError, RawAPI } from '../fa/RawAPI.js';
 import { logger } from '../lib/log.js';
+import { assertUsernameToIDValid } from '../lib/useridcheck.js';
 import { getNumericValue } from '../lib/utils.js';
 
 configDotenv();
@@ -84,15 +85,7 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
             continue;
         }
 
-        if (newUsername.replaceAll('_', '').length !== typedHit._source.createdBy.replaceAll('_', '').length) {
-            logger.error(
-                'Mismatched username lengths for user %s: %s -> %s',
-                typedHit._source.createdBy,
-                typedHit._source.createdByUsername,
-                newUsername,
-            );
-            continue;
-        }
+        assertUsernameToIDValid(typedHit._source.createdBy, newUsername);
 
         logger.info(
             'Rewriting user %s to username %s -> %s',
