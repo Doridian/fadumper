@@ -89,8 +89,8 @@ export class PageParser {
         );
 
         const userTitle = $('username.user-title').text().trim().split('|');
-        const userType = userTitle[0]?.trim() ?? '';
-        const createdAt = PageParser.parseFADate(userTitle[1]?.trim());
+        const userType = userTitle.length > 1 ? (userTitle[0]?.trim() ?? '') : '';
+        const createdAt = PageParser.parseFADate(userTitle.at(-1)?.trim());
 
         return {
             ...userPreview,
