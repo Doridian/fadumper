@@ -19,6 +19,22 @@ const faClient = new Client(faRawAPI);
 
 const handledUsernames = new Set<string>();
 
+const failedUserProfiles = new Set<string>();
+async function tryViaUserProfile(userID: string): Promise<string | undefined> {
+    if (failedUserProfiles.has(userID)) {
+        return undefined;
+    }
+
+    try {
+        const user = await faClient.getUserpage(userID);
+        return user.name;
+    } catch (error) {
+        logger.warn('Error fetching user profile %s: %s', userID, error);
+        failedUserProfiles.add(userID);
+        return undefined;
+    }
+}
+
 async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
     logger.info('Processing %d (total = %d)', response.hits.hits.length, getNumericValue(response.hits.total));
 
@@ -29,14 +45,26 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
             continue;
         }
 
-        // eslint-disable-next-line no-await-in-loop
-        const subData = await faClient.getSubmission(typedHit._source.id);
+        let newUsername;
+        try {
+            // eslint-disable-next-line no-await-in-loop
+            const subData = await faClient.getSubmission(typedHit._source.id);
+            newUsername = subData.createdBy.name;
+        } catch (error) {
+            logger.warn('Error fetching submission %s: %s', typedHit._source.id, error);
+            // eslint-disable-next-line no-await-in-loop
+            newUsername = await tryViaUserProfile(typedHit._source.createdBy);
+        }
+
+        if (!newUsername) {
+            continue;
+        }
 
         logger.info(
             'Rewriting user %s to username %s -> %s',
             typedHit._source.createdBy,
             typedHit._source.createdByUsername,
-            subData.createdBy.name,
+            newUsername,
         );
 
         // eslint-disable-next-line no-await-in-loop
@@ -47,7 +75,7 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
                     source: 'ctx._source.createdByUsername = params.newUsername;',
                     lang: 'painless',
                     params: {
-                        newUsername: subData.createdBy.name,
+                        newUsername,
                     },
                 },
                 query: {
