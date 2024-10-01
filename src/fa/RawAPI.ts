@@ -56,7 +56,10 @@ export class HttpError extends Error {
 }
 
 export class FASystemError extends Error {
-    public constructor(public readonly faMessage: string) {
+    public constructor(
+        public readonly faMessage: string,
+        public readonly rawHTML: string,
+    ) {
         super(`System error: ${faMessage}`);
         this.name = 'FASystemError';
     }
@@ -70,16 +73,16 @@ export class RawAPI {
         private readonly cookieB = '',
     ) {}
 
-    private static checkSystemError($: CheerioAPI): void {
+    private static checkSystemError($: CheerioAPI, responseText: string): void {
         const titleLower = $('body > section h2').text().trim().toLowerCase();
         if (titleLower !== 'system error') {
             return;
         }
         const text = $('div.section-body').text().trim();
-        throw new FASystemError(text);
+        throw new FASystemError(text, responseText);
     }
 
-    private static checkSystemMessage($: CheerioAPI): void {
+    private static checkSystemMessage($: CheerioAPI, responseText: string): void {
         const titleLower = $('section.notice-message h2').text().trim().toLowerCase();
         if (titleLower !== 'system message') {
             return;
@@ -88,7 +91,7 @@ export class RawAPI {
         if (!text) {
             text = $('section.notice-message .redirect-message').text().trim();
         }
-        throw new FASystemError(text);
+        throw new FASystemError(text, responseText);
     }
 
     private static checkValidPage($: CheerioAPI): void {
@@ -141,9 +144,11 @@ export class RawAPI {
                 lastError = ERROR_UNKNOWN;
                 // eslint-disable-next-line no-await-in-loop
                 response = await this.fetchRaw(url, 'text', true);
-                const $ = cheerioLoad(response.data as string);
-                RawAPI.checkSystemError($);
-                RawAPI.checkSystemMessage($);
+
+                const responseText = response.data as string;
+                const $ = cheerioLoad(responseText);
+                RawAPI.checkSystemError($, responseText);
+                RawAPI.checkSystemMessage($, responseText);
                 RawAPI.checkValidPage($);
                 return $;
             } catch (error) {
