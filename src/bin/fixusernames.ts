@@ -79,12 +79,10 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
                     },
                 },
                 query: {
-                    term: {
-                        bool: {
-                            must: {
-                                term: {
-                                    createdBy: typedHit._source.createdBy,
-                                },
+                    bool: {
+                        must: {
+                            term: {
+                                createdBy: typedHit._source.createdBy,
                             },
                         },
                     },
