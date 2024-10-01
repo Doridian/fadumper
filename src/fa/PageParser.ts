@@ -59,7 +59,7 @@ export class PageParser {
         return {
             thumbnail: thumbSrc ? new URL(thumbSrc, reqUrl) : undefined,
             title: $('div.submission-title').text().trim(),
-            createdBy: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a').first()),
+            createdBy: PageParser.parseUserAnchor(reqUrl, $('div.submission-id-sub-container a').first(), false),
             image: new URL(imageSrc, reqUrl),
             description: PageParser.parseHTMLUserContent($, $('div.submission-description'), reqUrl),
             category: $('span.category-name').first().text().trim(),
@@ -74,7 +74,12 @@ export class PageParser {
     public static parseJournal($: CheerioAPI, reqUrl: URL): Omit<IJournal, 'id'> {
         return {
             title: $('div.journal-title').text().trim(),
-            createdBy: PageParser.parseUserAnchor(reqUrl, $('userpage-nav-avatar a').first(), $('h1 username').first()),
+            createdBy: PageParser.parseUserAnchor(
+                reqUrl,
+                $('userpage-nav-avatar a').first(),
+                true,
+                $('h1 username').first(),
+            ),
             description: PageParser.parseHTMLUserContent($, $('div.journal-content'), reqUrl),
             createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
         };
@@ -85,6 +90,7 @@ export class PageParser {
         const userPreview = PageParser.parseUserAnchor(
             reqUrl,
             $('userpage-nav-avatar a').first(),
+            true,
             $('h1 username').first(),
         );
 
@@ -101,7 +107,12 @@ export class PageParser {
         };
     }
 
-    public static parseUserAnchor(reqUrl: URL, elem: Cheerio<Element>, nameElem?: Cheerio<Element>): IUserPreview {
+    public static parseUserAnchor(
+        reqUrl: URL,
+        elem: Cheerio<Element>,
+        nameHasPrefix: boolean,
+        nameElem?: Cheerio<Element>,
+    ): IUserPreview {
         const id = PageParser.USER_ID_REGEX.exec(new URL(elem.attr('href') ?? '', reqUrl).pathname.toLowerCase())?.[1];
         if (!id) {
             throw new Error(`Could not parse user anchor: ${elem.toString()}`);
@@ -112,7 +123,7 @@ export class PageParser {
             name = (nameElem ?? elem).find('img').attr('alt') ?? '';
         }
         name = name.trim();
-        if (/^[^\w-]/.test(name)) {
+        if (nameHasPrefix) {
             name = name.slice(1);
         }
 
@@ -140,7 +151,7 @@ export class PageParser {
             id: Number.parseInt(PageParser.parseSubmissionAnchor(elem.find('a')) ?? 'x', 10),
             thumbnail: new URL(elem.find('img').attr('src') ?? '', reqUrl),
             title: figCaption.find('p:first').text().trim(),
-            createdBy: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a').first()),
+            createdBy: PageParser.parseUserAnchor(reqUrl, figCaption.find('p:last a').first(), false),
         };
     }
 
@@ -254,7 +265,7 @@ export class PageParser {
         const parseUserAnchorSafe = (childCheerio: Cheerio<Element>): IUserPreview => {
             let userPreview;
             try {
-                userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio);
+                userPreview = PageParser.parseUserAnchor(reqUrl, childCheerio, false);
             } catch {
                 return {
                     id: '',

@@ -117,7 +117,12 @@ export class Client {
         const url = new URL(`/journals/${userID}/${page}/`, RawAPI.BASE_URL);
         const $ = await this.rawAPI.fetchHTML(url);
 
-        const createdBy = PageParser.parseUserAnchor(url, $('userpage-nav-avatar a'), $('h1 username'));
+        const createdBy = PageParser.parseUserAnchor(
+            url,
+            $('userpage-nav-avatar a').first(),
+            true,
+            $('h1 username').first(),
+        );
 
         const items = $('section').map((_, elem) => {
             return {
@@ -162,7 +167,7 @@ export class Client {
 
         const $ = await this.rawAPI.fetchHTML(url);
         const items = $('div.watch-list-items a').map((_, elem) => {
-            return PageParser.parseUserAnchor(url, $(elem));
+            return PageParser.parseUserAnchor(url, $(elem), false);
         });
 
         return PageParser.enhanceResultWithPagination(items.get(), $, url, 'Next ', 'Back ');
