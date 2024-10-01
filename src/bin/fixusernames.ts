@@ -37,6 +37,7 @@ async function tryViaUserProfile(userID: string): Promise<string | undefined> {
                 const { href } = lnk.attribs;
                 const text = $(lnk).text();
                 if (href?.startsWith('/unwatch/')) {
+                    logger.info('Using profile error to determine username for %s', userID);
                     // eslint-disable-next-line max-depth
                     if (text.toLowerCase().startsWith('unwatch ')) {
                         return text.slice(8);
