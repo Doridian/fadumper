@@ -57,11 +57,19 @@ export class HttpError extends Error {
 
 export class FASystemError extends Error {
     public constructor(
-        public readonly faMessage: string,
-        public readonly rawHTML: string,
+        private readonly faMessage: string,
+        private readonly rawHTML: string,
     ) {
         super(`System error: ${faMessage}`);
         this.name = 'FASystemError';
+    }
+
+    public getFAMessage(): string {
+        return this.faMessage;
+    }
+
+    public getRawHTML(): string {
+        return this.rawHTML;
     }
 }
 
@@ -73,25 +81,28 @@ export class RawAPI {
         private readonly cookieB = '',
     ) {}
 
-    private static checkSystemError($: CheerioAPI, responseText: string): void {
+    private static checkSystemError($: CheerioAPI): void {
         const titleLower = $('body > section h2').text().trim().toLowerCase();
         if (titleLower !== 'system error') {
             return;
         }
-        const text = $('div.section-body').text().trim();
-        throw new FASystemError(text, responseText);
+
+        const errorBody = $('div.section-body');
+        throw new FASystemError(errorBody.text().trim(), errorBody.html() ?? '');
     }
 
-    private static checkSystemMessage($: CheerioAPI, responseText: string): void {
+    private static checkSystemMessage($: CheerioAPI): void {
         const titleLower = $('section.notice-message h2').text().trim().toLowerCase();
         if (titleLower !== 'system message') {
             return;
         }
-        let text = $('section.notice-message p').text().trim();
+        let errorBody = $('section.notice-message p');
+        let text = errorBody.text().trim();
         if (!text) {
-            text = $('section.notice-message .redirect-message').text().trim();
+            errorBody = $('section.notice-message .redirect-message');
+            text = errorBody.text().trim();
         }
-        throw new FASystemError(text, responseText);
+        throw new FASystemError(text, errorBody.html() ?? '');
     }
 
     private static checkValidPage($: CheerioAPI): void {
@@ -147,8 +158,8 @@ export class RawAPI {
 
                 const responseText = response.data as string;
                 const $ = cheerioLoad(responseText);
-                RawAPI.checkSystemError($, responseText);
-                RawAPI.checkSystemMessage($, responseText);
+                RawAPI.checkSystemError($);
+                RawAPI.checkSystemMessage($);
                 RawAPI.checkValidPage($);
                 return $;
             } catch (error) {
@@ -165,13 +176,12 @@ export class RawAPI {
                     continue;
                 }
 
-                // eslint-disable-next-line max-depth
                 if (passthruErrors) {
                     throw error;
                 }
 
                 if (error instanceof FASystemError) {
-                    const msg = error.faMessage.toLowerCase();
+                    const msg = error.getFAMessage().toLowerCase();
                     if (
                         msg.includes('the submission you are trying to find is not in our database') ||
                         msg.includes(
