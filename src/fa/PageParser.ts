@@ -116,8 +116,12 @@ export class PageParser {
             name = name.slice(1);
         }
 
-        if (id.length < 1 || name.length < 1) {
-            throw new Error(`Could not parse user anchor: ${elem.toString()} ("${id}", "${name}")`);
+        const idFixLength = id.replaceAll('_', '').length;
+        const nameFixLength = name.replaceAll('_', '').length;
+        if (idFixLength !== nameFixLength) {
+            throw new Error(
+                `ID and Name fix length mismatch: "${id}" (${idFixLength}) vs "${name}" (${nameFixLength})`,
+            );
         }
 
         return {
