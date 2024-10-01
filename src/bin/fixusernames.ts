@@ -1,9 +1,10 @@
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { SearchResponse } from '@elastic/elasticsearch/lib/api/types';
+import { load as cheerioLoad } from 'cheerio';
 import { configDotenv } from 'dotenv';
 import { ESItem, IDBSubmission } from '../db/models.js';
 import { Client } from '../fa/Client.js';
-import { RawAPI } from '../fa/RawAPI.js';
+import { FASystemError, RawAPI } from '../fa/RawAPI.js';
 import { logger } from '../lib/log.js';
 import { getNumericValue } from '../lib/utils.js';
 
@@ -27,9 +28,24 @@ async function tryViaUserProfile(userID: string): Promise<string | undefined> {
     }
 
     try {
-        const user = await faClient.getUserpage(userID);
+        const user = await faClient.getUserpage(userID, true);
         return user.name;
     } catch (error) {
+        if (error instanceof FASystemError) {
+            const $ = cheerioLoad(error.faMessage);
+            for (const lnk of $('a')) {
+                const { href } = lnk.attribs;
+                const text = $(lnk).text();
+                if (href?.startsWith('/unwatch/')) {
+                    logger.info('Using profile error determine username for %s -> "%s"', userID, text);
+                    // eslint-disable-next-line max-depth
+                    if (text.toLowerCase().startsWith('unwatch ')) {
+                        return text.slice(8);
+                    }
+                    return text;
+                }
+            }
+        }
         logger.warn('Error fetching user profile %s: %s', userID, error);
         failedUserProfiles.add(userID);
         return undefined;
@@ -58,6 +74,17 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
         }
 
         if (!newUsername) {
+            logger.warn('Failed to fetch username for user %s', typedHit._source.createdBy);
+            continue;
+        }
+
+        if (newUsername.replaceAll('_', '').length !== typedHit._source.createdBy.replaceAll('_', '').length) {
+            logger.error(
+                'Mismatched username lengths for user %s: %s -> %s',
+                typedHit._source.createdBy,
+                typedHit._source.createdByUsername,
+                newUsername,
+            );
             continue;
         }
 

@@ -1,5 +1,5 @@
 import { PageParser } from './PageParser.js';
-import { RawAPI } from './RawAPI.js';
+import { HTTP_RETRIES, RawAPI } from './RawAPI.js';
 import { IJournal, IPaginatedResponse, ISubmission, ISubmissionPreview, IUser, IUserPreview } from './models.js';
 
 type PaginatedFetchFunction<Entry, ReqArg> = (param: ReqArg, page: number) => Promise<IPaginatedResponse<Entry[]>>;
@@ -104,9 +104,9 @@ export class Client {
         };
     }
 
-    public async getUserpage(userID: string): Promise<IUser> {
+    public async getUserpage(userID: string, passthruErrors = false): Promise<IUser> {
         const url = new URL(`/user/${userID}/`, RawAPI.BASE_URL);
-        return PageParser.parsesUserPage(await this.rawAPI.fetchHTML(url), url);
+        return PageParser.parsesUserPage(await this.rawAPI.fetchHTML(url, HTTP_RETRIES, passthruErrors), url);
     }
 
     private async rawJournalFetchAndParse(userID: string, page = 1): Promise<IPaginatedResponse<IJournal[]>> {
