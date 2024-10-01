@@ -108,7 +108,7 @@ export class PageParser {
             name = (nameElem ?? elem).find('img').attr('alt') ?? '';
         }
         name = name.trim();
-        if (/\W/.test(name)) {
+        if (/^[^\w-]/.test(name)) {
             name = name.slice(1);
         }
 
