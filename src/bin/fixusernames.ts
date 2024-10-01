@@ -142,7 +142,7 @@ async function main() {
                     bool: {
                         must: {
                             script: {
-                                script: "doc['createdBy'].value.replace('_', '').length() != doc['createdByUsername'].value.replace('_', '').length()",
+                                script: "doc['createdByUsername'].value.length() < 30 && doc['createdBy'].value.replace('_', '').length() != doc['createdByUsername'].value.replace('_', '').length()",
                             },
                         },
                     },
