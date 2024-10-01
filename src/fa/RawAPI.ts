@@ -84,7 +84,10 @@ export class RawAPI {
         if (titleLower !== 'system message') {
             return;
         }
-        const text = $('section.notice-message p').text().trim();
+        let text = $('section.notice-message p').text().trim();
+        if (!text) {
+            text = $('section.notice-message .redirect-message').text().trim();
+        }
         throw new FASystemError(text);
     }
 
@@ -125,10 +128,10 @@ export class RawAPI {
         });
     }
 
-    public async fetchHTML(url: URL): Promise<CheerioAPI> {
+    public async fetchHTML(url: URL, retries: number = HTTP_RETRIES): Promise<CheerioAPI> {
         let response;
         let lastError: unknown = ERROR_UNKNOWN;
-        for (let tryNum = 0; tryNum < HTTP_RETRIES; tryNum++) {
+        for (let tryNum = 0; tryNum < retries; tryNum++) {
             if (tryNum > 0) {
                 // eslint-disable-next-line no-await-in-loop
                 await delay(1000 * 2 ** (tryNum - 1));
@@ -161,13 +164,16 @@ export class RawAPI {
                     const msg = error.faMessage.toLowerCase();
                     if (
                         msg.includes('the submission you are trying to find is not in our database') ||
-                        msg.includes('the page you are trying to reach is currently pending deletion by a request from')
+                        msg.includes(
+                            'the page you are trying to reach is currently pending deletion by a request from',
+                        ) ||
+                        msg.includes('has voluntarily disabled access to their account and all of its contents')
                     ) {
                         throw new HttpError(404, url);
                     }
                 }
 
-                logger.warn('Error fetching %s, retrying (try %d/%d): %s', url.href, tryNum + 1, HTTP_RETRIES, error);
+                logger.warn('Error fetching %s, retrying (try %d/%d): %s', url.href, tryNum + 1, retries, error);
                 continue;
             }
         }
