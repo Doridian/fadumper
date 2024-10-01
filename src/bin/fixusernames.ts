@@ -11,6 +11,7 @@ configDotenv();
 
 const client = new ESClient({
     node: process.env.ES_URL,
+    requestTimeout: 60 * 60 * 1000,
 });
 const ES_BATCH_SIZE = 100;
 
@@ -103,6 +104,7 @@ async function main() {
         // eslint-disable-next-line no-await-in-loop
         response = await client.search({
             index: 'fa_submissions',
+            timeout: '1h',
             body: {
                 size: ES_BATCH_SIZE,
                 query: {
