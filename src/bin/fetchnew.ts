@@ -260,6 +260,7 @@ async function loopType(faType: FetchNewWithIDType) {
                     break;
                 }
             }
+
             if (hasHitTooNewPost()) {
                 logger.info('Hit too new post, stopping');
                 break;
