@@ -247,11 +247,6 @@ async function loopType(faType: FetchNewWithIDType) {
                 break;
             }
 
-            if (hasHitTooNewPost()) {
-                logger.info('Hit too new post, stopping');
-                break;
-            }
-
             if (maxFoundId > 0) {
                 let doBreak = false;
                 if (knownLastId > 0 && maxFoundId >= knownLastId) {
@@ -264,6 +259,10 @@ async function loopType(faType: FetchNewWithIDType) {
                     logger.info('Reached end (in batch) %i / %i', knownLastId, maxId);
                     break;
                 }
+            }
+            if (hasHitTooNewPost()) {
+                logger.info('Hit too new post, stopping');
+                break;
             }
         } else if (knownLastId <= 0) {
             logger.info('Empty batch and unknown end. Assuming all %ss were found', faType);
