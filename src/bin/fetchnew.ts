@@ -26,6 +26,7 @@ const FETCH_ONE_OVERRIDE = process.env.FETCHNEW_FETCH_ONE_OVERRIDE ?? '';
 
 const PER_FETCH_LIMIT = Number.parseInt(process.env.FETCHNEW_PER_FETCH_LIMIT ?? '10', 10);
 const limiter = pLimit(Number.parseInt(process.env.FETCHNEW_CONCURRENCY ?? '1', 10));
+const POST_AGE_MIN_MS = Number.parseInt(process.env.FETCHNEW_POST_AGE_MIN_SECONDS ?? '86400', 10) * 1000;
 
 const lockMutex = new SingleInstance(`fadumper_fetchnew_${ARGS.type}`);
 
@@ -97,6 +98,12 @@ async function loopType(faType: FetchNewWithIDType) {
 
     const knownLastId = faType === 'submission' && !FETCH_ONE_OVERRIDE ? await faClient.getMaxSubmissionID() : -1;
 
+    let hitTooNewPost = false;
+    const doHitTooNewPost = () => {
+        hitTooNewPost = true;
+    };
+    const hasHitTooNewPost = () => hitTooNewPost;
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
         const idRangeMin = maxId + 1;
@@ -117,8 +124,13 @@ async function loopType(faType: FetchNewWithIDType) {
         let maxFoundId = -1;
 
         const fetchOne = async (i: number) => {
+            if (hasHitTooNewPost() && i > maxFoundId) {
+                logger.info('Ignoring %s %i because hit too new post with lower ID', faType, i);
+                return;
+            }
+
             logger.info('Fetching %s %i', faType, i);
-            let doc: { id: number };
+            let doc: { id: number; createdAt: Date };
             try {
                 switch (faType) {
                     case 'journal': {
@@ -164,9 +176,27 @@ async function loopType(faType: FetchNewWithIDType) {
                 throw error;
             }
 
+            const postAgeMS = Date.now() - doc.createdAt.getTime();
+            if (postAgeMS < POST_AGE_MIN_MS) {
+                logger.info(
+                    'Ignored fetched %s %i because too new (is=%i; min=%i)',
+                    faType,
+                    i,
+                    postAgeMS,
+                    POST_AGE_MIN_MS,
+                );
+
+                if (maxFoundId >= doc.id) {
+                    maxFoundId = doc.id - 1;
+                }
+
+                doHitTooNewPost();
+                return;
+            }
+
             logger.info('Successfully fetched %s %i', faType, i);
 
-            if (doc.id > maxFoundId) {
+            if (doc.id > maxFoundId && !hasHitTooNewPost()) {
                 maxFoundId = doc.id;
             }
 
@@ -214,6 +244,11 @@ async function loopType(faType: FetchNewWithIDType) {
 
             if (FETCH_ONE_OVERRIDE) {
                 logger.warn('Fetched one, exiting');
+                break;
+            }
+
+            if (hasHitTooNewPost()) {
+                logger.info('Hit too new post, stopping');
                 break;
             }
 
