@@ -186,11 +186,10 @@ async function loopType(faType: FetchNewWithIDType) {
                     POST_AGE_MIN_MS,
                 );
 
+                doHitTooNewPost();
                 if (maxFoundId >= doc.id) {
                     maxFoundId = doc.id - 1;
                 }
-
-                doHitTooNewPost();
                 return;
             }
 
