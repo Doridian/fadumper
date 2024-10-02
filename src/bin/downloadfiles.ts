@@ -236,6 +236,7 @@ async function downloadDone(entry: QueueEntry, success: boolean | 'skipped', fil
             return;
         }
     } else if (fileDeleted) {
+        doc.hash = '';
         doc.deleted = true;
     } else {
         await checkEnd();
