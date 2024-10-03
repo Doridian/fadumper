@@ -18,12 +18,22 @@ export interface IDBCreatedBy {
     createdByUsername: string;
 }
 
-export interface IDBUser extends Omit<IUser, 'avatar' | 'description'>, IDBDescribable, IDBDownloadable, IDBCreatedBy {
+interface IDBBase {
+    refreshedAt: Date;
+}
+
+export interface IDBUser
+    extends Omit<IUser, 'avatar' | 'description'>,
+        IDBBase,
+        IDBDescribable,
+        IDBDownloadable,
+        IDBCreatedBy {
     avatar: string;
 }
 
 export interface IDBSubmission
     extends Omit<ISubmission, 'createdBy' | 'description' | 'image' | 'tags' | 'thumbnail'>,
+        IDBBase,
         IDBDescribable,
         IDBDownloadable,
         IDBCreatedBy {
@@ -34,6 +44,7 @@ export interface IDBSubmission
 
 export interface IDBJournal
     extends Omit<IJournal, 'createdBy' | 'description'>,
+        IDBBase,
         IDBDescribable,
         IDBDownloadable,
         IDBCreatedBy {}

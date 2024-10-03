@@ -67,6 +67,9 @@
             },
             "downloaded": {
                 "type": "boolean"
+            },
+            "refreshedAt": {
+                "type": "date"
             }
         }
     }

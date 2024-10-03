@@ -143,6 +143,7 @@ async function loopType(faType: FetchNewWithIDType) {
                             descriptionRefersToJournals: [...journal.description.refersToJournals],
                             descriptionRefersToSubmissions: [...journal.description.refersToSubmissions],
                             descriptionRefersToUsers: [...journal.description.refersToUsers],
+                            refreshedAt: new Date(),
                         };
                         doc = dbJournal;
                         break;
@@ -160,6 +161,7 @@ async function loopType(faType: FetchNewWithIDType) {
                             descriptionRefersToJournals: [...submission.description.refersToJournals],
                             descriptionRefersToSubmissions: [...submission.description.refersToSubmissions],
                             descriptionRefersToUsers: [...submission.description.refersToUsers],
+                            refreshedAt: new Date(),
                         };
                         doc = dbSubmission;
                         break;
