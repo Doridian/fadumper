@@ -53,7 +53,8 @@ async function processSearch(
     req: express.Request,
     faType: 'journal' | 'submission' | 'user',
 ) {
-    const size = req.query.limit ? Number.parseInt(req.query.limit.toString(), 10) : 100;
+    const size = req.query.size ? Number.parseInt(req.query.size.toString(), 10) : 100;
+    const from = req.query.from ? Number.parseInt(req.query.from.toString(), 10) : 0;
 
     if (Object.keys(query).length < 1) {
         query.match_all = {};
@@ -63,6 +64,7 @@ async function processSearch(
         index: `fa_${faType}s`,
         body: {
             size,
+            from,
             query,
         },
     });
