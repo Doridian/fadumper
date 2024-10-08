@@ -10,6 +10,8 @@ const client = new ESClient({
     node: process.env.ES_URL,
 });
 
+app.use(express.text({ type: '*/*' }));
+
 type ESRecordType = Record<string, string>;
 
 function filterURL(container: ESRecordType, field: string, req: express.Request) {
