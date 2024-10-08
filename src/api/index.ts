@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-base-to-string */
+import path from 'node:path';
 import { URL } from 'node:url';
 import { Client as ESClient } from '@elastic/elasticsearch';
 import { SearchHit } from '@elastic/elasticsearch/lib/api/types';
 import express from 'express';
 import { logger } from '../lib/log.js';
+import { makeHashPath } from '../lib/utils.js';
 
 const app = express();
 const client = new ESClient({
@@ -14,10 +16,13 @@ app.use(express.text({ type: '*/*' }));
 
 type ESRecordType = Record<string, string>;
 
-function filterURL(container: ESRecordType, field: string, req: express.Request) {
-    if (container[field]) {
-        const url = new URL(container[field]);
-        url.pathname = `/files/${url.host}${decodeURI(url.pathname)}`;
+function filterURL(container: ESRecordType, field: string, hashField: string, req: express.Request) {
+    if (container[hashField] && container[field]) {
+        const hash = container[hashField];
+        const urlStr = container[field];
+        const url = new URL(urlStr);
+        const hashPath = makeHashPath(hash, path.extname(url.pathname));
+        url.pathname = `/files/${hashPath}`;
         url.host = req.hostname;
         url.protocol = req.protocol;
         container[field] = url.href;
@@ -29,9 +34,7 @@ function filterESHit(hit: SearchHit<ESRecordType>, req: express.Request): ESReco
     if (!source) {
         throw new Error('No source');
     }
-    filterURL(source, 'file_url', req);
-    filterURL(source, 'sample_url', req);
-    filterURL(source, 'preview_url', req);
+    filterURL(source, 'image', 'hash', req);
     return source;
 }
 

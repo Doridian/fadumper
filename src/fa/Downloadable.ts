@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Stats } from 'node:fs';
 import { rename, stat, unlink, utimes } from 'node:fs/promises';
 import path from 'node:path';
-import { mkdirp, mkdirpFor } from '../lib/utils.js';
+import { makeHashPath, mkdirp, mkdirpFor } from '../lib/utils.js';
 import { RawAPI } from './RawAPI.js';
 
 export const DOWNLOAD_PATH = process.env.DOWNLOAD_PATH ?? './downloads';
@@ -37,7 +37,7 @@ export class DownloadableFile {
             throw new Error('File extension not found');
         }
 
-        return path.join(HASH_PATH, hash.slice(0, 2), hash.slice(2, 4), `${hash}${this.ext}`);
+        return path.join(HASH_PATH, makeHashPath(hash, this.ext));
     }
 
     public getHash(): string {
