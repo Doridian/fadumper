@@ -14,6 +14,8 @@ const client = new ESClient({
 
 app.use(express.text({ type: '*/*' }));
 
+const PORT = Number.parseInt(process.env.PORT ?? '8001', 10);
+
 type ESRecordType = Record<string, string>;
 
 function filterURL(container: ESRecordType, field: string, hashField: string, req: express.Request) {
@@ -22,6 +24,7 @@ function filterURL(container: ESRecordType, field: string, hashField: string, re
         const hashPath = makeHashPath(container[hashField], path.extname(url.pathname));
         url.pathname = `/files/${hashPath}`;
         url.host = req.hostname;
+        url.port = `${PORT}`;
         url.protocol = req.protocol;
         container[field] = url.href;
     }
@@ -118,7 +121,7 @@ app.get('/api/v1/healthcheck', (_: express.Request, res: express.Response) => {
     res.send({ ok: true });
 });
 
-app.listen(8001, () => {
+app.listen(PORT, () => {
     logger.info('fadumper API online');
 });
 
