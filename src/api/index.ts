@@ -18,10 +18,8 @@ type ESRecordType = Record<string, string>;
 
 function filterURL(container: ESRecordType, field: string, hashField: string, req: express.Request) {
     if (container[hashField] && container[field]) {
-        const hash = container[hashField];
-        const urlStr = container[field];
-        const url = new URL(urlStr);
-        const hashPath = makeHashPath(hash, path.extname(url.pathname));
+        const url = new URL(container[field]);
+        const hashPath = makeHashPath(container[hashField], path.extname(url.pathname));
         url.pathname = `/files/${hashPath}`;
         url.host = req.hostname;
         url.protocol = req.protocol;
