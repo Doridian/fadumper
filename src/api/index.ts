@@ -91,9 +91,13 @@ function addTerms(query: Record<string, unknown>, field: string, terms: string[]
     }
 }
 
-function addNegatableTerms(query: Record<string, unknown>, field: string, terms: string[]) {
+function addNegatableTerms(query: Record<string, unknown>, field: string, terms: string[] | string) {
     const posTerms: string[] = [];
     const negTerms: string[] = [];
+
+    if (!Array.isArray(terms)) {
+        terms = [terms];
+    }
 
     for (const term of terms) {
         if (term.startsWith('-')) {
@@ -110,7 +114,13 @@ function addNegatableTerms(query: Record<string, unknown>, field: string, terms:
 app.get('/api/v1/submissions', async (req: express.Request, res: express.Response) => {
     const query = {};
     if (req.query.tags) {
-        addNegatableTerms(query, 'tags', req.query.tags.toString().split(' '));
+        addNegatableTerms(query, 'tags', req.query.tags as string[] | string);
+    }
+    if (req.query.descriptionRefersToUsers) {
+        addNegatableTerms(query, 'descriptionRefersToUsers', req.query.descriptionRefersToUsers as string[] | string);
+    }
+    if (req.query.description) {
+        addNegatableTerms(query, 'description', req.query.description as string[] | string);
     }
     res.send(await processSearch(query, req, 'submission'));
 });
