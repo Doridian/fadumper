@@ -103,7 +103,13 @@ app.get('/api/v1/submissions', async (req: express.Request, res: express.Respons
 });
 
 app.post('/api/v1/submissions', async (req: express.Request, res: express.Response) => {
-    const query = JSON.parse(req.body as string) as Record<string, unknown>;
+    let query: Record<string, unknown>;
+    try {
+        query = JSON.parse(req.body as string) as Record<string, unknown>;
+    } catch {
+        res.status(400).send({ error: 'Invalid JSON' });
+        return;
+    }
     res.send(await processSearch(query, req, 'submission'));
 });
 
