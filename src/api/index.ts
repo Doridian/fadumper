@@ -18,6 +18,8 @@ app.use('/files', express.static(path.join(DOWNLOAD_PATH, 'hashes')));
 app.use(express.text({ type: '*/*' }));
 
 const PORT = Number.parseInt(process.env.PORT ?? '8001', 10);
+const { URL_HOST, URL_PROTOCOL } = process.env;
+const URL_FILES_PATH = process.env.URL_FILES_PATH ?? '/files';
 
 type ESRecordType = Record<string, string>;
 
@@ -25,10 +27,14 @@ function filterURL(container: ESRecordType, field: string, hashField: string, re
     if (container[hashField] && container[field]) {
         const url = new URL(container[field]);
         const hashPath = makeHashPath(container[hashField], path.extname(url.pathname));
-        url.pathname = `/files/${hashPath}`;
-        url.host = req.hostname;
-        url.port = `${PORT}`;
-        url.protocol = req.protocol;
+        url.pathname = `${URL_FILES_PATH}/${hashPath}`;
+        if (URL_HOST) {
+            url.host = URL_HOST;
+        } else {
+            url.hostname = req.hostname;
+            url.port = `${PORT}`;
+        }
+        url.protocol = URL_PROTOCOL ?? req.protocol;
         container[field] = url.href;
     }
 }
