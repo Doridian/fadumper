@@ -39,13 +39,12 @@ function filterURL(container: ESRecordType, field: string, hashField: string, re
     }
 }
 
-function filterESHit(hit: SearchHit<ESRecordType>, req: express.Request): ESRecordType {
+function filterESHit(hit: SearchHit<ESRecordType>, req: express.Request) {
     const source = hit._source;
     if (!source) {
         throw new Error('No source');
     }
     filterURL(source, 'image', 'hash', req);
-    return source;
 }
 
 async function processSearch(
@@ -76,7 +75,11 @@ async function processSearch(
         },
     });
 
-    return (res.hits.hits as SearchHit<ESRecordType>[]).map((hit: SearchHit<ESRecordType>) => filterESHit(hit, req));
+    for (const hit of res.hits.hits as SearchHit<ESRecordType>[]) {
+        filterESHit(hit, req);
+    }
+
+    return res.hits;
 }
 
 function addTerms(query: Record<string, unknown>, field: string, terms: string[], typ = 'must') {
