@@ -100,3 +100,7 @@ export function checkPathSafe(givenPath: string): boolean {
     const segs = givenPath.split('/');
     return segs.every((seg) => seg !== '.' && seg !== '..');
 }
+
+export function makeHashPath(hash: string, ext: string): string {
+    return path.join(hash.slice(0, 2), hash.slice(2, 4), `${hash}${ext}`);
+}
