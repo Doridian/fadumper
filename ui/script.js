@@ -25,7 +25,7 @@ function renderResult(hit) {
             const imgThumbnail = document.createElement('img');
             imgThumbnail.src = hit._source.image;
             imgThumbnail.width = 320;
-            imgThumbnail.alt = hit._source.description;
+            imgThumbnail.title = hit._source.description;
             link.appendChild(imgThumbnail);
             break;
         default:
