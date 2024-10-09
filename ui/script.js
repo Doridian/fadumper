@@ -41,7 +41,7 @@ function renderResult(hit) {
 
 let latestSearchHolder = undefined;
 
-async function asyncSearch(query, searchHolder, size = 100, from = 0) {
+async function asyncSearch(query, searchHolder, size, from) {
     if (size < 1 || size > 1000) {
         alert('Size must be between 1 and 1000');
     }
