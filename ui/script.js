@@ -28,6 +28,13 @@ function renderResult(hit) {
             imgThumbnail.title = hit._source.description;
             link.appendChild(imgThumbnail);
             break;
+        case 'swf':
+        case 'fla':
+            const descFlash = document.createElement('p');
+            descFlash.title = hit._source.description;
+            descFlash.innerText = 'Flash content';
+            link.appendChild(descFlash);
+            break;
         default:
             return undefined;
     }
