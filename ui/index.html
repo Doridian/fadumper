@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+    <head>
+        <title>FADumper UI</title>
+        <link rel="stylesheet" type="text/css" href="style.css" />
+        <script src="script.js"></script>
+    </head>
+    <body>
+        <h1>FADumper Search UI</h1>
+        <textarea id="query" cols="120" rows="20"></textarea>
+        <br />
+        <label for="from">From:</label> <input type="number" id="from" min="0" value="0" />
+        <label for="size">Size:</label> <input type="number" id="size" min="1" max="1000" value="100" />
+        <input type="button" value="Search" onclick="runSearch();" />
+        <hr>
+        <h4>Results <b class="result-start">#</b> - <b class="result-end">#</b> (total <b class="result-total">#</b>)
+            <input type="button" value="&lt;&lt;" onclick="firstPage();" />
+            <input type="button" value="&lt;" onclick="prevPage();" />
+            <input type="button" value="&gt;" onclick="nextPage();" />
+        </h4>
+        <div id="results"></div>
+        <hr>
+        <h4>Results <b class="result-start">#</b> - <b class="result-end">#</b> (total <b class="result-total">#</b>)
+            <input type="button" value="&lt;&lt;" onclick="firstPage();" />
+            <input type="button" value="&lt;" onclick="prevPage();" />
+            <input type="button" value="&gt;" onclick="nextPage();" />
+        </h4>
+    </body>
+</html>

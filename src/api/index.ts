@@ -15,6 +15,8 @@ const client = new ESClient({
 
 app.use('/files', express.static(path.join(DOWNLOAD_PATH, 'hashes')));
 
+app.use('/ui', express.static(path.join(import.meta.dirname, '..', '..', 'ui')));
+
 app.use(express.text({ type: '*/*' }));
 
 const PORT = Number.parseInt(process.env.PORT ?? '8001', 10);
