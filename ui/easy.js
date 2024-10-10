@@ -1,13 +1,15 @@
 'use strict';
 
-function processEasySearch(valStr) {
+function parseTerms(valStr) {
     const terms = [];
-    function addTerm(term) {
+
+    const addTerm = (term) => {
         if (!term) {
             return;
         }
         terms.push(term.trim());
-    }
+    };
+
     let i = 0;
     while (i < valStr.length) {
         const nextSpace = valStr.indexOf(' ', i);
@@ -32,6 +34,12 @@ function processEasySearch(valStr) {
             i = nextSpace + 1;
         }
     }
+
+    return terms;
+}
+
+function processEasySearch(valStr) {
+    const terms = parseTerms(valStr);
 
     return terms;
 }
