@@ -2,6 +2,11 @@
 
 set -x
 
+if [ ! -z "${LOOPER_DISABLE-}" ]; then
+	echo 'Disabled'
+	exit 0
+fi
+
 export PROXY_URL="${LOOPER_FETCHNEW_PROXY_URL-}"
 
 echo 'Fetch'
