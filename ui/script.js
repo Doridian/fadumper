@@ -46,7 +46,9 @@ function renderResult(hit) {
     return resultElement;
 }
 
-async function asyncSearch(query, size = 100, from = 0) {
+let latestSearchHolder = undefined;
+
+async function asyncSearch(query, searchHolder, size, from) {
     if (size < 1 || size > 1000) {
         alert('Size must be between 1 and 1000');
     }
@@ -61,7 +63,13 @@ async function asyncSearch(query, size = 100, from = 0) {
             'Content-Type': 'application/json',
         },
     });
+    if (searchHolder !== latestSearchHolder) {
+        return;
+    }
     const data = await res.json();
+    if (searchHolder !== latestSearchHolder) {
+        return;
+    }
 
     const fromEnd = from + data.hits.length - 1;
     const totalStr = `${data.total.relation} ${data.total.value}`;
@@ -109,7 +117,31 @@ function parseIntInput(id) {
     return parseInt(input.value, 10);
 }
 
+function handleSearchDone(searchHolder) {
+    if (searchHolder !== latestSearchHolder) {
+        return;
+    }
+    latestSearchHolder = undefined;
+    document.title = 'Idle - FADumper';
+}
+
+function handleSearchStart() {
+    document.title = 'Searching... - FADumper';
+    latestSearchHolder = new Symbol('SearchHolder');
+    return latestSearchHolder;
+}
+
+function handleSearchError(err) {
+    alert('Search error:\n' + err);
+    console.error('Search error', err);
+}
+
 function runSearch() {
     const query = document.getElementById('query').value;
-    asyncSearch(query, parseIntInput('size'), parseIntInput('from')).catch(console.error);
+    const searchHolder = handleSearchStart();
+    asyncSearch(query, searchHolder, parseIntInput('size'), parseIntInput('from'))
+        .catch(handleSearchError)
+        .then(() => {
+            handleSearchDone(searchHolder);
+        });
 }
