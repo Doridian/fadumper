@@ -127,7 +127,7 @@ function handleSearchDone(searchHolder) {
 
 function handleSearchStart() {
     document.title = 'Searching... - FADumper';
-    latestSearchHolder = new Symbol('SearchHolder');
+    latestSearchHolder = Symbol('SearchHolder');
     return latestSearchHolder;
 }
 
