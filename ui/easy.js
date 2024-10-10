@@ -4,10 +4,11 @@ function parseTerms(valStr) {
     const terms = [];
 
     const addTerm = (term) => {
+        term = term.trim();
         if (!term) {
             return;
         }
-        terms.push(term.trim());
+        terms.push(term);
     };
 
     let i = 0;
