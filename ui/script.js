@@ -70,6 +70,10 @@ async function asyncSearch(query, searchHolder, size, from) {
     if (searchHolder !== latestSearchHolder) {
         return;
     }
+    if (res.status !== 200) {
+        alert(`Search failed: ${data.error ?? JSON.stringify(data)}`);
+        return;
+    }
 
     const fromEnd = from + data.hits.length - 1;
     const totalStr = `${data.total.relation} ${data.total.value}`;
