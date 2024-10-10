@@ -39,10 +39,69 @@ function parseTerms(valStr) {
     return terms;
 }
 
+function termToQuery(query, term, negate) {
+    if (term.charAt(0) === '-') {
+        termToQuery(query, term.substring(1), true);
+        return;
+    }
+
+    const isWildcard = term.includes('*');
+
+    const termQueryBool = [];
+
+    const addFieldToQuery = (field) => {
+        if (isWildcard) {
+            termQueryBool.push({
+                wildcard: {
+                    [field]: {
+                        value: term,
+                    },
+                },
+            });
+            return;
+        }
+        termQueryBool.push({
+            term: {
+                [field]: term,
+            },
+        });
+    };
+
+    addFieldToQuery('title');
+    addFieldToQuery('tags');
+    addFieldToQuery('description');
+    addFieldToQuery('createdBy');
+    addFieldToQuery('createdByUsername');
+    addFieldToQuery('descriptionRefersToUsers');
+
+    if (negate) {
+        query.bool.must_not.push(...termQueryBool);
+    } else {
+        query.bool.must.push({
+            bool: {
+                should: termQueryBool,
+            },
+        });
+    }
+}
+
 function processEasySearch(valStr) {
     const terms = parseTerms(valStr);
 
-    return terms;
+    const query = {
+        bool: {
+            must: [
+                {
+                    term: {
+                        downloaded: true,
+                    },
+                }
+            ],
+            must_not: [],
+        },
+    };
+    terms.forEach(term => termToQuery(query, term, false));
+    return query;
 }
 
 function onEasySearch() {

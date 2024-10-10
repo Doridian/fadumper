@@ -10,8 +10,15 @@ function renderResult(hit) {
     const resultElement = document.createElement('span');
 
     const link = document.createElement('a');
-    link.href = hit._source.image;
+    link.href = `https://www.furaffinity.net/view/${hit._source.id}/`;
     link.target = '_blank';
+    link.onclick = (e) => {
+        e.stopPropagation();
+        window.open(hit._source.image, '_blank');
+        return false;
+    }
+
+    const titleText = `[TITLE]\n${hit._source.title}\n\n[DESCRIPTION]\n${hit._source.description}`;
 
     const imgUrl = hit._source.image;
     const ext = imgUrl.split('.').pop();
@@ -25,13 +32,13 @@ function renderResult(hit) {
             const imgThumbnail = document.createElement('img');
             imgThumbnail.src = hit._source.image;
             imgThumbnail.width = 320;
-            imgThumbnail.title = hit._source.description;
+            imgThumbnail.title = titleText;
             link.appendChild(imgThumbnail);
             break;
         case 'swf':
         case 'fla':
             const descFlash = document.createElement('p');
-            descFlash.title = hit._source.description;
+            descFlash.title = titleText;
             descFlash.innerText = 'Flash content';
             link.appendChild(descFlash);
             break;
