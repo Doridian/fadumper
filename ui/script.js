@@ -16,7 +16,7 @@ function renderResult(hit) {
         e.stopPropagation();
         window.open(hit._source.image, '_blank');
         return false;
-    }
+    };
 
     const titleText = `[TITLE]\n${hit._source.title}\n\n[DESCRIPTION]\n${hit._source.description}`;
 

@@ -95,15 +95,19 @@ function processEasySearch(valStr) {
                     term: {
                         downloaded: true,
                     },
-                }
+                },
             ],
             must_not: [],
         },
     };
-    terms.forEach(term => termToQuery(query, term, false));
+    terms.forEach((term) => termToQuery(query, term, false));
     return query;
 }
 
 function onEasySearch() {
-    document.getElementById('query').value = JSON.stringify(processEasySearch(document.getElementById('easy').value), null, 2);
+    document.getElementById('query').value = JSON.stringify(
+        processEasySearch(document.getElementById('easy').value),
+        null,
+        2,
+    );
 }
