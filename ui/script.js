@@ -141,5 +141,7 @@ function runSearch() {
     const searchHolder = handleSearchStart();
     asyncSearch(query, searchHolder, parseIntInput('size'), parseIntInput('from'))
         .catch(handleSearchError)
-        .then(() => { handleSearchDone(searchHolder); });
+        .then(() => {
+            handleSearchDone(searchHolder);
+        });
 }
