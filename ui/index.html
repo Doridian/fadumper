@@ -4,11 +4,14 @@
         <title>FADumper UI</title>
         <link rel="stylesheet" type="text/css" href="style.css" />
         <script src="script.js"></script>
+        <script src="easy.js"></script>
     </head>
     <body>
         <h1>FADumper Search UI</h1>
         <textarea id="query" cols="120" rows="20"></textarea>
         <br />
+        <input type="text" id="easy" size="120" onkeyup="onEasySearch();" placeholder="Easy search..." />
+        <br /><br />
         <label for="from">From:</label> <input type="number" id="from" min="0" value="0" />
         <label for="size">Size:</label> <input type="number" id="size" min="1" max="1000" value="100" />
         <input type="button" value="Search" onclick="runSearch();" />
