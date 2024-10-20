@@ -30,7 +30,7 @@ function renderResult(hit) {
         case 'bmp':
         case 'webp':
             const imgThumbnail = document.createElement('img');
-            imgThumbnail.src = hit._source.image;
+            imgThumbnail.src = hit._source.file;
             imgThumbnail.width = 320;
             imgThumbnail.title = titleText;
             link.appendChild(imgThumbnail);
