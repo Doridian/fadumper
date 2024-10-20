@@ -30,7 +30,7 @@ export interface ISubmission extends ISubmissionPreview {
     type: string;
     species: string;
     gender: string;
-    image: URL;
+    file: URL;
     createdAt: Date;
     tags: Set<string>;
 }

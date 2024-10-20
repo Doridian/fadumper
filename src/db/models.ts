@@ -38,7 +38,7 @@ export interface IDBSubmission
         IDBDownloadable,
         IDBCreatedBy {
     tags: string[];
-    image: string;
+    file: string;
     thumbnail: string;
 }
 
