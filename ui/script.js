@@ -7,6 +7,8 @@ function renderBBCode(bbcodeStr) {
 }
 
 function renderResult(hit) {
+    const fileUrl = hit._source.file;
+
     const resultElement = document.createElement('span');
 
     const link = document.createElement('a');
@@ -14,14 +16,13 @@ function renderResult(hit) {
     link.target = '_blank';
     link.onclick = (e) => {
         e.stopPropagation();
-        window.open(hit._source.image, '_blank');
+        window.open(fileUrl, '_blank');
         return false;
     };
 
     const titleText = `[TITLE]\n${hit._source.title}\n\n[DESCRIPTION]\n${hit._source.description}`;
 
-    const imgUrl = hit._source.image;
-    const ext = imgUrl.split('.').pop();
+    const ext = fileUrl.split('.').pop();
     switch (ext) {
         case 'jpg':
         case 'jpeg':
@@ -30,7 +31,7 @@ function renderResult(hit) {
         case 'bmp':
         case 'webp':
             const imgThumbnail = document.createElement('img');
-            imgThumbnail.src = hit._source.file;
+            imgThumbnail.src = fileUrl;
             imgThumbnail.width = 320;
             imgThumbnail.title = titleText;
             link.appendChild(imgThumbnail);
