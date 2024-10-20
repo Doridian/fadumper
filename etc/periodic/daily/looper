@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 source /cron-env
 
 cd /opt/app
