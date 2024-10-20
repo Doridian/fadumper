@@ -46,7 +46,7 @@ function filterESHit(hit: SearchHit<ESRecordType>, req: express.Request) {
     if (!source) {
         throw new Error('No source');
     }
-    filterURL(source, 'image', 'hash', req);
+    filterURL(source, 'file', 'hash', req);
 }
 
 async function processSearch(
