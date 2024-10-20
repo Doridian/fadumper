@@ -3,4 +3,4 @@
 source /cron-env
 
 cd /opt/app
-s6-setuidgid '${PUID}:${PGID}' ./looper.sh
+exec s6-setuidgid "${PUID}:${PGID}" ./looper.sh
