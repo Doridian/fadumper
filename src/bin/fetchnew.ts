@@ -152,7 +152,7 @@ async function loopType(faType: FetchNewWithIDType) {
                         const submission = await faClient.getSubmission(i);
                         const dbSubmission: Omit<IDBSubmission, 'deleted' | 'downloaded' | 'hash'> = {
                             ...submission,
-                            image: submission.image.href,
+                            file: submission.file.href,
                             thumbnail: submission.thumbnail?.href ?? '',
                             tags: [...submission.tags],
                             createdBy: submission.createdBy.id,

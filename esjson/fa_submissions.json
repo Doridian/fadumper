@@ -17,7 +17,7 @@
             "gender": {
                 "type": "keyword"
             },
-            "image": {
+            "file": {
                 "type": "keyword"
             },
             "tags": {
