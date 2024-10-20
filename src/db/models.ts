@@ -32,7 +32,7 @@ export interface IDBUser
 }
 
 export interface IDBSubmission
-    extends Omit<ISubmission, 'createdBy' | 'description' | 'image' | 'tags' | 'thumbnail'>,
+    extends Omit<ISubmission, 'createdBy' | 'description' | 'file' | 'tags' | 'thumbnail'>,
         IDBBase,
         IDBDescribable,
         IDBDownloadable,

@@ -156,7 +156,7 @@ interface DLURL {
 async function addSubmission(submission: ESItem<IDBSubmission>) {
     await addURL(submission, [
         {
-            url: submission._source.image,
+            url: submission._source.file,
             hash: submission._source.hash,
         },
     ]);
