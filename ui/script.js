@@ -20,8 +20,8 @@ function renderResult(hit) {
 
     const titleText = `[TITLE]\n${hit._source.title}\n\n[DESCRIPTION]\n${hit._source.description}`;
 
-    const imgUrl = hit._source.image;
-    const ext = imgUrl.split('.').pop();
+    const fileUrl = hit._source.file;
+    const ext = fileUrl.split('.').pop();
     switch (ext) {
         case 'jpg':
         case 'jpeg':
@@ -30,7 +30,7 @@ function renderResult(hit) {
         case 'bmp':
         case 'webp':
             const imgThumbnail = document.createElement('img');
-            imgThumbnail.src = hit._source.file;
+            imgThumbnail.src = fileUrl;
             imgThumbnail.width = 320;
             imgThumbnail.title = titleText;
             link.appendChild(imgThumbnail);
