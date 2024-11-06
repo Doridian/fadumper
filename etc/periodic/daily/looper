@@ -1,8 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
-set -e
+set -euo pipefail
+set -x
 
+set -o allexport
 source /cron-env
+set +o allexport
 
 cd /opt/app
 exec s6-setuidgid "${PUID}:${PGID}" ./looper.sh
