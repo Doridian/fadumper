@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import winston from 'winston';
 
 export const logger = winston.createLogger({
