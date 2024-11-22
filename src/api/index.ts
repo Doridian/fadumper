@@ -19,7 +19,8 @@ app.use('/ui', express.static(path.join(import.meta.dirname, '..', '..', 'ui')))
 
 app.use(express.text({ type: '*/*' }));
 
-const PORT = process.env.PORT ?? '8001';
+const PORT = Number.parseInt(process.env.PORT ?? '8001', 10);
+const HOST = process.env.HOST ?? '127.0.0.1';
 const { URL_HOST, URL_PROTOCOL } = process.env;
 const URL_FILES_PATH = process.env.URL_FILES_PATH ?? '/files';
 
@@ -34,7 +35,7 @@ function filterURL(container: ESRecordType, field: string, hashField: string, re
             url.host = URL_HOST;
         } else {
             url.hostname = req.hostname;
-            url.port = PORT;
+            url.port = `${PORT}`;
         }
         url.protocol = URL_PROTOCOL ?? req.protocol;
         container[field] = url.href;
@@ -158,7 +159,7 @@ app.get('/api/v1/healthcheck', (_: express.Request, res: express.Response) => {
     res.send({ ok: true });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
     logger.info('fadumper API online');
 });
 
