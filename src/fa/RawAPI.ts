@@ -118,6 +118,7 @@ export class RawAPI {
         const file = createWriteStream(dest);
 
         await new Promise<void>((resolve, reject) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
             const resStream = response.data as Stream;
             resStream.on('data', (chunk: Buffer) => {
                 if (hash) {
@@ -156,6 +157,7 @@ export class RawAPI {
                 // eslint-disable-next-line no-await-in-loop
                 response = await this.fetchRaw(url, 'text', true);
 
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
                 const responseText = response.data as string;
                 const $ = cheerioLoad(responseText);
                 RawAPI.checkSystemError($);

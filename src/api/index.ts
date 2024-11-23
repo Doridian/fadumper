@@ -78,6 +78,7 @@ async function processSearch(
         },
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     for (const hit of res.hits.hits as SearchHit<ESRecordType>[]) {
         filterESHit(hit, req);
     }
@@ -94,6 +95,7 @@ function addTerms(query: Record<string, unknown>, field: string, terms: string[]
         query.bool = {};
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     const qBool = query.bool as Record<string, unknown[] | undefined>;
 
     if (!qBool[typ]) {
@@ -129,12 +131,15 @@ function addNegatableTerms(query: Record<string, unknown>, field: string, terms:
 app.get('/api/v1/submissions', async (req: express.Request, res: express.Response) => {
     const query = {};
     if (req.query.tags) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         addNegatableTerms(query, 'tags', req.query.tags as string[] | string);
     }
     if (req.query.descriptionRefersToUsers) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         addNegatableTerms(query, 'descriptionRefersToUsers', req.query.descriptionRefersToUsers as string[] | string);
     }
     if (req.query.description) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         addNegatableTerms(query, 'description', req.query.description as string[] | string);
     }
     try {
@@ -147,6 +152,7 @@ app.get('/api/v1/submissions', async (req: express.Request, res: express.Respons
 
 app.post('/api/v1/submissions', async (req: express.Request, res: express.Response) => {
     try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         const query = JSON.parse(req.body as string) as Record<string, unknown>;
         res.send(await processSearch(query, req, 'submission'));
     } catch (error) {

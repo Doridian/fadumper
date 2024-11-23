@@ -58,6 +58,7 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
     logger.info('Processing %d (total = %d)', response.hits.hits.length, getNumericValue(response.hits.total));
 
     for (const hit of response.hits.hits) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         const typedHit = hit as ESItem<IDBSubmission>;
 
         if (handledUsernames.has(typedHit._source.createdBy)) {
