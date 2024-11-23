@@ -17,6 +17,7 @@ const argParse = new ArgumentParser({
 argParse.add_argument('-t', '--type', { default: 'submission' });
 argParse.add_argument('-l', '--looper', { action: 'store_true' });
 argParse.add_argument('--touch', { action: 'store_true' });
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
 const ARGS = argParse.parse_args() as { type: 'submission' | 'user'; looper: boolean; touch: boolean };
 
 const PER_RUN_LIMIT = Number.parseInt(process.env.DOWNLOADFILES_PER_RUN_LIMIT ?? '100000', 10);
@@ -296,9 +297,11 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
         foundCount++;
         switch (ARGS.type) {
             case 'submission':
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
                 promises.push(addSubmission(hit as ESItem<IDBSubmission>));
                 break;
             case 'user':
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
                 promises.push(addUser(hit as ESItem<IDBUser>));
                 break;
             default:

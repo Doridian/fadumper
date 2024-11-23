@@ -39,6 +39,7 @@ export async function mkdirp(rawDir: string): Promise<void> {
                 await mkdir(partial);
                 i += 2;
             } catch (error) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
                 switch ((error as { code: string }).code) {
                     case 'ENOENT':
                         continue;

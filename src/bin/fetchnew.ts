@@ -20,6 +20,7 @@ const argParse = new ArgumentParser({
 });
 argParse.add_argument('-t', '--type', { default: 'submission' });
 argParse.add_argument('-l', '--looper', { action: 'store_true' });
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
 const ARGS = argParse.parse_args() as { type: 'journal' | 'submission' | 'user' };
 
 const FETCH_ONE_OVERRIDE = process.env.FETCHNEW_FETCH_ONE_OVERRIDE ?? '';
@@ -78,6 +79,7 @@ async function getMaxID(faType: FetchNewWithIDType) {
                 },
             },
         });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         maxId = getNumericValue(maxIdRes.aggregations?.max_id as number | undefined);
     }
 
