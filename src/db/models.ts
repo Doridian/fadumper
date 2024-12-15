@@ -6,14 +6,14 @@ export interface IDBDownloadable {
     hash: string | undefined;
 }
 
-export interface IDBDescribable {
+interface IDBDescribable {
     description: string;
     descriptionRefersToUsers: string[];
     descriptionRefersToSubmissions: number[];
     descriptionRefersToJournals: number[];
 }
 
-export interface IDBCreatedBy {
+interface IDBCreatedBy {
     createdBy: string;
     createdByUsername: string;
 }
