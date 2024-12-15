@@ -194,7 +194,8 @@ export class PageParser {
         if (!date) {
             throw new Error('No date provided');
         }
-        return new Date(date); // TODO: Timezone?
+        // TODO: Timezone?
+        return new Date(date);
     }
 
     private static parseHTMLUserContent($: CheerioAPI, elem: Cheerio<Element>, reqUrl: URL): IUserTextContent {
@@ -299,7 +300,8 @@ export class PageParser {
 
             switch (child.tagName.toLowerCase()) {
                 case 'br':
-                    content.text += '\n'; // Do not call addToResult as this never gets whitespaces
+                    // Do not call addToResult as this never gets whitespaces
+                    content.text += '\n';
                     handled = true;
                     break;
                 case 'a':

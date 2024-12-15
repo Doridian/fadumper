@@ -153,7 +153,6 @@ export class RawAPI {
             }
 
             try {
-                lastError = ERROR_UNKNOWN;
                 // eslint-disable-next-line no-await-in-loop
                 response = await this.fetchRaw(url, 'text', true);
 

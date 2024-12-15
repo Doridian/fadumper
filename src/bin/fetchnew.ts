@@ -106,7 +106,6 @@ async function loopType(faType: FetchNewWithIDType) {
     };
     const hasHitTooNewPost = () => hitTooNewPost;
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
         const idRangeMin = maxId + 1;
         let idRangeMax = maxId + PER_FETCH_LIMIT;
