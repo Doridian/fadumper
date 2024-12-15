@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 /* eslint-disable */
 
 export default tseslint.config(
-    { ignores: ['**/dist', 'eslint.config.mjs', 'ui'] },
+    { ignores: ['dist', 'downloads', 'eslint.config.mjs', 'ui'] },
     js.configs.all,
     ...tseslint.configs.all,
     _import.flatConfigs.recommended,
