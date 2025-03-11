@@ -5,7 +5,6 @@ import { Cheerio, CheerioAPI } from 'cheerio';
 import { ElementType } from 'domelementtype';
 import { Element } from 'domhandler';
 import { logger } from '../lib/log.js';
-import { assertUsernameToIDValid } from '../lib/useridcheck.js';
 import {
     IJournal,
     IPaginatedResponse,
@@ -139,8 +138,6 @@ export class PageParser {
                 name,
             };
         }
-
-        assertUsernameToIDValid(id, name);
 
         return {
             id,

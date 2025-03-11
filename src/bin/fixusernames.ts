@@ -6,7 +6,6 @@ import { ESItem, IDBSubmission } from '../db/models.js';
 import { Client } from '../fa/Client.js';
 import { FASystemError, RawAPI } from '../fa/RawAPI.js';
 import { logger } from '../lib/log.js';
-import { assertUsernameToIDValid } from '../lib/useridcheck.js';
 import { getNumericValue } from '../lib/utils.js';
 
 configDotenv();
@@ -83,13 +82,6 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
 
         if (!newUsername) {
             logger.warn('Failed to fetch username for user %s', typedHit._source.createdBy);
-            continue;
-        }
-
-        try {
-            assertUsernameToIDValid(typedHit._source.createdBy, newUsername);
-        } catch (error) {
-            logger.error('Error validating user %s -> %s: %s', typedHit._source.createdBy, newUsername, error);
             continue;
         }
 
