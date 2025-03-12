@@ -7,7 +7,7 @@ function renderBBCode(bbcodeStr) {
 }
 
 function renderResult(hit) {
-    const fileUrl = hit._source.file;
+    const fileUrl = hit._source.fileLocal;
 
     const resultElement = document.createElement('span');
 

@@ -26,7 +26,7 @@ const URL_FILES_PATH = process.env.URL_FILES_PATH ?? '/files';
 
 type ESRecordType = Record<string, string>;
 
-function filterURL(container: ESRecordType, field: string, hashField: string, req: express.Request) {
+function filterURL(container: ESRecordType, field: string, hashField: string, outField: string, req: express.Request) {
     if (container[hashField] && container[field]) {
         const url = new URL(container[field]);
         const hashPath = makeHashPath(container[hashField], path.extname(url.pathname));
@@ -38,7 +38,7 @@ function filterURL(container: ESRecordType, field: string, hashField: string, re
             url.port = `${PORT}`;
         }
         url.protocol = URL_PROTOCOL ?? req.protocol;
-        container[field] = url.href;
+        container[outField] = url.href;
     }
 }
 
@@ -47,7 +47,7 @@ function filterESHit(hit: SearchHit<ESRecordType>, req: express.Request) {
     if (!source) {
         throw new Error('No source');
     }
-    filterURL(source, 'file', 'hash', req);
+    filterURL(source, 'file', 'hash', 'fileLocal', req);
 }
 
 async function processSearch(
