@@ -91,16 +91,12 @@ function addTerms(query: Record<string, unknown>, field: string, terms: string[]
         return;
     }
 
-    if (!query.bool) {
-        query.bool = {};
-    }
+    query.bool ??= {};
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     const qBool = query.bool as Record<string, unknown[] | undefined>;
 
-    if (!qBool[typ]) {
-        qBool[typ] = [];
-    }
+    qBool[typ] ??= [];
 
     const qtyp = qBool[typ];
     for (const term of terms) {
