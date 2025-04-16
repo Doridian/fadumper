@@ -15,7 +15,7 @@ services:
             interval: 60s
             timeout: 10s
     elasticsearch:
-        image: elasticsearch:8.17.5
+        image: elasticsearch:8.18.0
         restart: always
         ports:
             - 9200:9200
