@@ -71,11 +71,9 @@ async function processSearch(
 
     const res = await client.search({
         index: `fa_${faType}s`,
-        body: {
-            size,
-            from,
-            query,
-        },
+        size,
+        from,
+        query,
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
