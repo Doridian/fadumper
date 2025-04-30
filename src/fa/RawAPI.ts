@@ -55,7 +55,7 @@ export class HttpError extends Error {
     }
 }
 
-class FASystemError extends Error {
+export class FASystemError extends Error {
     public constructor(
         private readonly faMessage: string,
         private readonly rawHTML: string,

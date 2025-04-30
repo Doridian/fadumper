@@ -69,10 +69,12 @@ async function getMaxID(faType: FetchNewWithIDType) {
     if (maxId <= 0) {
         const maxIdRes = await client.search({
             index: `fa_${faType}s`,
-            aggregations: {
-                max_id: {
-                    max: {
-                        field: 'id',
+            body: {
+                aggs: {
+                    max_id: {
+                        max: {
+                            field: 'id',
+                        },
                     },
                 },
             },

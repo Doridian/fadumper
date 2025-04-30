@@ -326,10 +326,12 @@ async function main() {
     let response = await client.search({
         index: `fa_${ARGS.type}s`,
         scroll: '60s',
-        size: ES_BATCH_SIZE,
-        query: {
-            bool: {
-                must_not: mustNot,
+        body: {
+            size: ES_BATCH_SIZE,
+            query: {
+                bool: {
+                    must_not: mustNot,
+                },
             },
         },
     });
