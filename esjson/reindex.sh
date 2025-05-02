@@ -34,6 +34,6 @@ curl -v -XPOST "$(hostname):9200/_aliases" -H 'Content-Type: application/json' -
     "actions" : [
         { "add" : { "index" : "fa_journals_2", "alias" : "fa_journals" } },
         { "add" : { "index" : "fa_users_2", "alias" : "fa_users" } },
-        { "add" : { "index" : "fa_submissions_2", "alias" : "fa_users" } }
+        { "add" : { "index" : "fa_submissions_2", "alias" : "fa_submissions" } }
     ]
 }'
