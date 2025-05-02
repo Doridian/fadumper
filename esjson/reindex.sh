@@ -14,6 +14,10 @@ if [ -z "${NEWVER}" ]; then
 	exit 1
 fi
 
+curl -v -XPUT -H 'Content-Type: application/json' "http://elasticsearch:9200/fa_submissions_${NEWVER}" --data @fa_submissions.json
+curl -v -XPUT -H 'Content-Type: application/json' "http://elasticsearch:9200/fa_users_${NEWVER}" --data @fa_users.json
+curl -v -XPUT -H 'Content-Type: application/json' "http://elasticsearch:9200/fa_journals_${NEWVER}" --data @fa_journals.json
+
 curl -v -XPOST 'http://elasticsearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
   \"source\": {
     \"index\": \"fa_submissions_${OLDVER}\"
