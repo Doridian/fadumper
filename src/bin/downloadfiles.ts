@@ -58,6 +58,7 @@ let totalCount = 0;
 const MAX_PARALLEL = Number.parseInt(process.env.DOWNLOADFILES_CONCURRENCY ?? '10', 10);
 const ES_BATCH_SIZE = 1000;
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion
 const EXIT_ERROR_IF_FOUND = !!ARGS.looper;
 
 let inProgress = 0;
