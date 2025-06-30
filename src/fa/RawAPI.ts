@@ -15,7 +15,7 @@ const HTTP_STREAM_TIMEOUT = Number.parseInt(process.env.HTTP_STREAM_TIMEOUT ?? '
 
 const ERROR_UNKNOWN = new Error('Unknown error, this should not happen');
 
-const GLOBAL_HTTP_AGENT = ((): (HttpAgent & HttpsAgent) | undefined => {
+const GLOBAL_HTTP_AGENT = ((): SocksProxyAgent | undefined => {
     if (!process.env.PROXY_URL) {
         return undefined;
     }
