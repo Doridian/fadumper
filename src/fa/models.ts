@@ -13,6 +13,7 @@ export interface IUserPreview {
 export interface IUser extends IUserPreview {
     avatar?: URL;
     description: IUserTextContent;
+    raw: string;
     type: string;
     createdAt: Date;
 }
@@ -26,6 +27,7 @@ export interface ISubmissionPreview {
 
 export interface ISubmission extends ISubmissionPreview {
     description: IUserTextContent;
+    raw: string;
     category: string;
     type: string;
     species: string;
@@ -45,6 +47,7 @@ export interface IJournal {
     id: number;
     title: string;
     description: IUserTextContent;
+    raw: string;
     createdBy: IUserPreview;
     createdAt: Date;
 }

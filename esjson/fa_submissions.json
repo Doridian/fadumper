@@ -41,6 +41,10 @@
                     }
                 }
             },
+            "raw": {
+                "type": "text",
+                "index": false
+            },
             "descriptionRefersToUsers": {
                 "type": "keyword"
             },
