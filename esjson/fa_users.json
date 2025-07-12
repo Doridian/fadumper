@@ -27,7 +27,8 @@
                 }
             },
             "raw": {
-                "type": "text"
+                "type": "text",
+                "index": false
             },
             "descriptionRefersToUsers": {
                 "type": "keyword"
