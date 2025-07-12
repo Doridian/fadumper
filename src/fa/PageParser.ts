@@ -68,6 +68,7 @@ export class PageParser {
             gender: $('strong.highlight:contains("Gender") + span').first().text().trim(),
             createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
             tags,
+            raw: $.html(),
         };
     }
 
@@ -82,6 +83,7 @@ export class PageParser {
             ),
             description: PageParser.parseHTMLUserContent($, $('div.journal-content'), reqUrl),
             createdAt: PageParser.parseFADate($('span.popup_date').first().attr('title')?.trim()),
+            raw: $.html(),
         };
     }
 
@@ -104,6 +106,7 @@ export class PageParser {
             description: PageParser.parseHTMLUserContent($, $('div.userpage-profile'), reqUrl),
             type: userType,
             createdAt,
+            raw: $.html(),
         };
     }
 
@@ -165,6 +168,7 @@ export class PageParser {
             title: elem.find('.section-header h2').text().trim(),
             createdAt: PageParser.parseFADate(elem.find('.popup_date').attr('title')?.trim()),
             description: PageParser.parseHTMLUserContent($, elem.find('.journal-body'), reqUrl),
+            raw: elem.html() ?? '',
         };
     }
 
