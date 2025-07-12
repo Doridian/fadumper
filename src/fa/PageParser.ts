@@ -480,7 +480,7 @@ export class PageParser {
                 continue;
             }
 
-            throw new Error(`Unhandled element: ${childCheerio.toString()}`);
+            logger.warn(`Unhandled element: ${childCheerio.toString()}`);
         }
 
         content.text = content.text.replace(PageParser.STRIP_INVISIBLE_WHITESPACE_POST, '$1').trim();
