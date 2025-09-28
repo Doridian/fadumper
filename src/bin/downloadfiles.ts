@@ -1,5 +1,6 @@
 import { SingleInstance } from '@doridian/single-instance';
-import { BulkOperationContainer, BulkUpdateAction, SearchResponse } from '@elastic/elasticsearch/lib/api/types';
+import { Core_Bulk } from '@opensearch-project/opensearch/api/_types/index.js';
+import { Search_Response } from '@opensearch-project/opensearch/api/index.js';
 import { ArgumentParser } from 'argparse';
 import { configDotenv } from 'dotenv';
 import { client } from '../db/client.js';
@@ -33,7 +34,7 @@ function feedWatchdog() {
 
     watchdogTimer = setTimeout(() => {
         logger.error('Timeout reached, setting early exit');
-        esDone = true;
+        osDone = true;
         setHadErrors();
         process.exit(1);
     }, WATCHDOG_TIMEOUT);
@@ -44,10 +45,9 @@ interface QueueEntry {
     item: ESItem<IDBDownloadable>;
 }
 
-type ESBulkType = BulkOperationContainer | BulkUpdateAction;
-
+type OSBulkType = Core_Bulk.OperationContainer | Core_Bulk.UpdateAction;
 const queue: QueueEntry[] = [];
-let esQueue: ESBulkType[] = [];
+let osQueue: OSBulkType[] = [];
 let doneCount = 0;
 let errorCount = 0;
 let foundCount = 0;
@@ -56,13 +56,13 @@ let successCount = 0;
 let totalCount = 0;
 
 const MAX_PARALLEL = Number.parseInt(process.env.DOWNLOADFILES_CONCURRENCY ?? '10', 10);
-const ES_BATCH_SIZE = 1000;
+const OS_BATCH_SIZE = 1000;
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion
 const EXIT_ERROR_IF_FOUND = !!ARGS.looper;
 
 let inProgress = 0;
-let esDone = false;
+let osDone = false;
 
 const faRawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
 
@@ -90,17 +90,17 @@ function printStats() {
 printStats();
 let scanInterval: NodeJS.Timeout | undefined = setInterval(printStats, 10_000);
 
-const ES_BATCH_SIZE_2 = ES_BATCH_SIZE * 2;
+const OS_BATCH_SIZE_2 = OS_BATCH_SIZE * 2;
 async function esRunBatchUpdate(min: number) {
-    if (esQueue.length < min) {
+    if (osQueue.length < min) {
         return;
     }
-    const todo = esQueue;
-    esQueue = [];
+    const todo = osQueue;
+    osQueue = [];
 
     try {
         await client.bulk({
-            operations: todo,
+            body: todo,
         });
         logger.info('Processed %i batched updates', todo.length / 2);
     } catch (error) {
@@ -115,11 +115,11 @@ function handleError(error: Error) {
 }
 
 let batcherInterval: NodeJS.Timeout | undefined = setInterval(() => {
-    esRunBatchUpdate(ES_BATCH_SIZE_2).catch(handleError);
+    esRunBatchUpdate(OS_BATCH_SIZE_2).catch(handleError);
 }, 1000);
 
 async function checkEnd() {
-    if (queue.length > 0 || inProgress > 0 || !esDone) {
+    if (queue.length > 0 || inProgress > 0 || !osDone) {
         return;
     }
 
@@ -240,7 +240,7 @@ async function downloadDone(entry: QueueEntry, success: boolean | 'skipped', fil
         return;
     }
 
-    esQueue.push(
+    osQueue.push(
         {
             update: {
                 _index: entry.item._index,
@@ -281,8 +281,8 @@ async function downloadNext(): Promise<void> {
     feedWatchdog();
 }
 
-async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
-    totalCount = getNumericValue(response.hits.total);
+async function getMoreUntilDone(response: Search_Response): Promise<boolean> {
+    totalCount = getNumericValue(response.body.hits.total);
 
     if (totalCount > 0 && EXIT_ERROR_IF_FOUND && !process.exitCode) {
         process.exitCode = 2;
@@ -290,7 +290,7 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
 
     // collect all the records
     const promises: Promise<void>[] = [];
-    for (const hit of response.hits.hits) {
+    for (const hit of response.body.hits.hits) {
         foundCount++;
         switch (ARGS.type) {
             case 'submission':
@@ -309,7 +309,7 @@ async function getMoreUntilDone(response: SearchResponse): Promise<boolean> {
 
     if (totalCount === foundCount || foundCount >= PER_RUN_LIMIT) {
         logger.info('Queued all ES entries: %i (total %i, cap %i)', foundCount, totalCount, PER_RUN_LIMIT);
-        esDone = true;
+        osDone = true;
         await checkEnd();
         return false;
     }
@@ -323,10 +323,12 @@ async function main() {
     let response = await client.search({
         index: `fa_${ARGS.type}s`,
         scroll: '60s',
-        size: ES_BATCH_SIZE,
-        query: {
-            bool: {
-                must_not: mustNot,
+        size: OS_BATCH_SIZE,
+        body: {
+            query: {
+                bool: {
+                    must_not: mustNot,
+                },
             },
         },
     });
@@ -336,7 +338,7 @@ async function main() {
         feedWatchdog();
         // eslint-disable-next-line no-await-in-loop
         response = await client.scroll({
-            scroll_id: response._scroll_id,
+            scroll_id: response.body._scroll_id,
             scroll: '60s',
         });
         feedWatchdog();
@@ -354,7 +356,7 @@ async function safeMain() {
         await main();
     } catch (error) {
         logger.error('ES scan error, setting early exit: %s', error);
-        esDone = true;
+        osDone = true;
         setHadErrors();
     }
 

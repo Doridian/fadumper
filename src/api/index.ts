@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-base-to-string */
 import path from 'node:path';
 import { URL } from 'node:url';
-import { SearchHit } from '@elastic/elasticsearch/lib/api/types';
+import { Hit } from '@opensearch-project/opensearch/api/_types/_core.search.js';
 import express from 'express';
 import { client } from '../db/client.js';
 import { DOWNLOAD_PATH } from '../fa/Downloadable.js';
@@ -39,7 +39,7 @@ function filterURL(container: ESRecordType, field: string, hashField: string, ou
     }
 }
 
-function filterESHit(hit: SearchHit<ESRecordType>, req: express.Request) {
+function filterESHit(hit: Hit, req: express.Request) {
     const source = hit._source;
     if (!source) {
         throw new Error('No source');
@@ -70,15 +70,16 @@ async function processSearch(
         index: `fa_${faType}s`,
         size,
         from,
-        query,
+        body: {
+            query,
+        },
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    for (const hit of res.hits.hits as SearchHit<ESRecordType>[]) {
+    for (const hit of res.body.hits.hits) {
         filterESHit(hit, req);
     }
 
-    return res.hits;
+    return res.body.hits;
 }
 
 function addTerms(query: Record<string, unknown>, field: string, terms: string[], typ = 'must') {

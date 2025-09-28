@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "@doridian/single-instance": "^0.0.5",
-    "@elastic/elasticsearch": "^9.0.0",
+    "@opensearch-project/opensearch": "^3.5.1",
     "argparse": "^2.0.1",
     "axios": "^1.7.7",
     "cheerio": "^1.0.0-rc.12",

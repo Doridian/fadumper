@@ -3,19 +3,19 @@ services:
         build: .
         restart: always
         environment:
-            ES_URL: http://elasticsearch:9200
+            OS_URL: http://opensearch:9200
             FA_COOKIE_A: ${FA_COOKIE_A}
             FA_COOKIE_B: ${FA_COOKIE_B}
         links:
-            - elasticsearch:elasticsearch
+            - opensearch:opensearch
         volumes:
             - data:/data
         healthcheck:
             test: 'curl -s -f "http://$${HOSTNAME}:8001/api/v1/healthcheck" >/dev/null || exit 1'
             interval: 60s
             timeout: 10s
-    elasticsearch:
-        image: elasticsearch:9.1.4
+    opensearch:
+        image: opensearchproject/opensearch:3.2.0
         restart: always
         ports:
             - 9200:9200
@@ -29,8 +29,8 @@ services:
             interval: 60s
             timeout: 10s
         volumes:
-            - elasticsearch_data:/usr/share/elasticsearch/data
+            - opensearch_data:/usr/share/opensearch/data
 
 volumes:
     data: {}
-    elasticsearch_data: {}
+    opensearch_data: {}
