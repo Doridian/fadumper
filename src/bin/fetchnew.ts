@@ -1,10 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { SingleInstance } from '@doridian/single-instance';
-import { Client as ESClient } from '@elastic/elasticsearch';
 import { ArgumentParser } from 'argparse';
 import { configDotenv } from 'dotenv';
 import pLimit from 'p-limit';
+import { client } from '../db/client.js';
 import { IDBJournal, IDBSubmission } from '../db/models.js';
 import { Client as FAClient } from '../fa/Client.js';
 import { DOWNLOAD_PATH } from '../fa/Downloadable.js';
@@ -30,10 +30,6 @@ const limiter = pLimit(Number.parseInt(process.env.FETCHNEW_CONCURRENCY ?? '1', 
 const POST_AGE_MIN_MS = Number.parseInt(process.env.FETCHNEW_POST_AGE_MIN_SECONDS ?? '86400', 10) * 1000;
 
 const lockMutex = new SingleInstance(`fadumper_fetchnew_${ARGS.type}`);
-
-const client = new ESClient({
-    node: process.env.ES_URL,
-});
 
 const faRawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
 const faClient = new FAClient(faRawAPI);
