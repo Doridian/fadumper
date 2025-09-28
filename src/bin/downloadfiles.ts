@@ -1,8 +1,8 @@
 import { SingleInstance } from '@doridian/single-instance';
-import { Client as ESClient } from '@elastic/elasticsearch';
 import { BulkOperationContainer, BulkUpdateAction, SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import { ArgumentParser } from 'argparse';
 import { configDotenv } from 'dotenv';
+import { client } from '../db/client.js';
 import { ESItem, IDBDownloadable, IDBSubmission, IDBUser } from '../db/models.js';
 import { DownloadableFile } from '../fa/Downloadable.js';
 import { RawAPI } from '../fa/RawAPI.js';
@@ -63,10 +63,6 @@ const EXIT_ERROR_IF_FOUND = !!ARGS.looper;
 
 let inProgress = 0;
 let esDone = false;
-
-const client = new ESClient({
-    node: process.env.ES_URL,
-});
 
 const faRawAPI = new RawAPI(process.env.FA_COOKIE_A, process.env.FA_COOKIE_B);
 

@@ -1,17 +1,14 @@
 /* eslint-disable @typescript-eslint/no-base-to-string */
 import path from 'node:path';
 import { URL } from 'node:url';
-import { Client as ESClient } from '@elastic/elasticsearch';
 import { SearchHit } from '@elastic/elasticsearch/lib/api/types';
 import express from 'express';
+import { client } from '../db/client.js';
 import { DOWNLOAD_PATH } from '../fa/Downloadable.js';
 import { logger } from '../lib/log.js';
 import { makeHashPath } from '../lib/utils.js';
 
 const app = express();
-const client = new ESClient({
-    node: process.env.ES_URL,
-});
 
 app.use('/files', express.static(path.join(DOWNLOAD_PATH, 'hashes')));
 
