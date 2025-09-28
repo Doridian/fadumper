@@ -14,11 +14,11 @@ if [ -z "${NEWVER}" ]; then
 	exit 1
 fi
 
-curl -f -v -XPUT -H 'Content-Type: application/json' "http://elasticsearch:9200/fa_submissions_${NEWVER}" --data @fa_submissions.json
-curl -f -v -XPUT -H 'Content-Type: application/json' "http://elasticsearch:9200/fa_users_${NEWVER}" --data @fa_users.json
-curl -f -v -XPUT -H 'Content-Type: application/json' "http://elasticsearch:9200/fa_journals_${NEWVER}" --data @fa_journals.json
+curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fa_submissions_${NEWVER}" --data @fa_submissions.json
+curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fa_users_${NEWVER}" --data @fa_users.json
+curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fa_journals_${NEWVER}" --data @fa_journals.json
 
-curl -f -v -XPOST 'http://elasticsearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
+curl -f -v -XPOST 'http://opensearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
   \"source\": {
     \"index\": \"fa_submissions_${OLDVER}\"
   },
@@ -28,7 +28,7 @@ curl -f -v -XPOST 'http://elasticsearch:9200/_reindex' -H 'Content-Type: applica
 }"
 
 
-curl -f -v -XPOST 'http://elasticsearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
+curl -f -v -XPOST 'http://opensearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
   \"source\": {
     \"index\": \"fa_users_${OLDVER}\"
   },
@@ -37,7 +37,7 @@ curl -f -v -XPOST 'http://elasticsearch:9200/_reindex' -H 'Content-Type: applica
   }
 }"
 
-curl -f -v -XPOST 'http://elasticsearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
+curl -f -v -XPOST 'http://opensearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
   \"source\": {
     \"index\": \"fa_journals_${OLDVER}\"
   },
@@ -46,7 +46,7 @@ curl -f -v -XPOST 'http://elasticsearch:9200/_reindex' -H 'Content-Type: applica
   }
 }"
 
-curl -f -v -XPOST 'http://elasticsearch:9200/_aliases' -H 'Content-Type: application/json' --data-raw "{
+curl -f -v -XPOST 'http://opensearch:9200/_aliases' -H 'Content-Type: application/json' --data-raw "{
     \"actions\" : [
         { \"add\": { \"index\": \"fa_journals_${NEWVER}\", \"alias\": \"fa_journals\" } },
         { \"add\": { \"index\": \"fa_users_${NEWVER}\", \"alias\": \"fa_users\" } },
@@ -58,6 +58,6 @@ curl -f -v -XPOST 'http://elasticsearch:9200/_aliases' -H 'Content-Type: applica
 }"
 
 echo 'Run the following commands to delete the old indices:'
-echo "curl -XDELETE 'http://elasticsearch:9200/fa_journals_${OLDVER}'"
-echo "curl -XDELETE 'http://elasticsearch:9200/fa_users_${OLDVER}'"
-echo "curl -XDELETE 'http://elasticsearch:9200/fa_submissions_${OLDVER}'"
+echo "curl -XDELETE 'http://opensearch:9200/fa_journals_${OLDVER}'"
+echo "curl -XDELETE 'http://opensearch:9200/fa_users_${OLDVER}'"
+echo "curl -XDELETE 'http://opensearch:9200/fa_submissions_${OLDVER}'"

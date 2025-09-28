@@ -1,5 +1,5 @@
 #!/bin/sh
-curl -v -XPOST -H 'Content-Type: application/json' 'http://elasticsearch:9200/fa_submissions/_update_by_query?conflicts=proceed' --data-raw '{
+curl -v -XPOST -H 'Content-Type: application/json' 'http://opensearch:9200/fa_submissions/_update_by_query?conflicts=proceed' --data-raw '{
     "query": {
         "bool": {
             "must": [
@@ -18,7 +18,7 @@ curl -v -XPOST -H 'Content-Type: application/json' 'http://elasticsearch:9200/fa
     }
 }'
 
-curl -v -XPOST -H 'Content-Type: application/json' 'http://elasticsearch:9200/fa_submissions/_update_by_query?conflicts=proceed' --data-raw '{
+curl -v -XPOST -H 'Content-Type: application/json' 'http://opensearch:9200/fa_submissions/_update_by_query?conflicts=proceed' --data-raw '{
     "query": {
         "bool": {
             "must": [
@@ -37,7 +37,7 @@ curl -v -XPOST -H 'Content-Type: application/json' 'http://elasticsearch:9200/fa
     }
 }'
 
-curl -v -XPOST -H 'Content-Type: application/json' 'http://elasticsearch:9200/fa_users/_update_by_query?conflicts=proceed' --data-raw '{
+curl -v -XPOST -H 'Content-Type: application/json' 'http://opensearch:9200/fa_users/_update_by_query?conflicts=proceed' --data-raw '{
     "query": {
         "bool": {
             "must": [
@@ -56,7 +56,7 @@ curl -v -XPOST -H 'Content-Type: application/json' 'http://elasticsearch:9200/fa
     }
 }'
 
-curl -v -XPOST -H 'Content-Type: application/json' 'http://elasticsearch:9200/fa_users/_update_by_query?conflicts=proceed' --data-raw '{
+curl -v -XPOST -H 'Content-Type: application/json' 'http://opensearch:9200/fa_users/_update_by_query?conflicts=proceed' --data-raw '{
     "query": {
         "bool": {
             "must": [
