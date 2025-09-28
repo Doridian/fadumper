@@ -1,5 +1,6 @@
 /dist
 /downloads
+/result
 node_modules
 .eslintcache
 .env
