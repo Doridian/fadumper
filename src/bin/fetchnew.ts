@@ -65,16 +65,18 @@ async function getMaxID(faType: FetchNewWithIDType) {
     if (maxId <= 0) {
         const maxIdRes = await client.search({
             index: `fa_${faType}s`,
-            aggregations: {
-                max_id: {
-                    max: {
-                        field: 'id',
+            body: {
+                aggregations: {
+                    max_id: {
+                        max: {
+                            field: 'id',
+                        },
                     },
                 },
             },
         });
         // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-        maxId = getNumericValue(maxIdRes.aggregations?.max_id as number | undefined);
+        maxId = getNumericValue(maxIdRes.body.aggregations?.max_id as number | undefined);
     }
 
     if (maxId < 0) {
@@ -234,7 +236,7 @@ async function loopType(faType: FetchNewWithIDType) {
                 body: pageQueue,
             });
 
-            if (result.errors) {
+            if (result.body.errors) {
                 throw new Error(JSON.stringify(result));
             }
 

@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { SearchTotalHits } from '@elastic/elasticsearch/lib/api/types';
+import { Common_Aggregations } from '@opensearch-project/opensearch/api/_types/index.js';
 import pLimit from 'p-limit';
 import { DownloadableFile } from '../fa/Downloadable.js';
 import { HttpError } from '../fa/RawAPI.js';
@@ -62,7 +62,7 @@ export async function mkdirp(rawDir: string): Promise<void> {
     madeDirs.add(dir);
 }
 
-export function getNumericValue(val: SearchTotalHits | number | undefined): number {
+export function getNumericValue(val: Common_Aggregations.CardinalityAggregate | number | undefined): number {
     if (val === undefined) {
         return 0;
     }

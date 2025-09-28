@@ -1,19 +1,11 @@
 import { ClientRequestArgs } from 'node:http';
-import {
-    ConnectionRequestOptions,
-    ConnectionRequestParams,
-    Client as ESClient,
-    HttpConnection,
-} from '@elastic/elasticsearch';
+import { Client, Connection } from '@opensearch-project/opensearch';
 
-const UNIX_SOCKET_PATH = process.env.ES_UNIX_SOCKET_PATH ?? '';
+const UNIX_SOCKET_PATH = process.env.OS_UNIX_SOCKET_PATH ?? '';
 
-class UDSConnection extends HttpConnection {
-    public override buildRequestObject(
-        params: ConnectionRequestParams,
-        options: ConnectionRequestOptions,
-    ): ClientRequestArgs {
-        const request = super.buildRequestObject(params, options);
+class UDSConnection extends Connection {
+    public override buildRequestObject(params: unknown): ClientRequestArgs {
+        const request = super.buildRequestObject(params);
         if (UNIX_SOCKET_PATH) {
             request.socketPath = UNIX_SOCKET_PATH;
         }
@@ -21,7 +13,7 @@ class UDSConnection extends HttpConnection {
     }
 }
 
-export const client = new ESClient({
-    node: process.env.ES_URL,
+export const client = new Client({
+    node: process.env.OS_URL,
     Connection: UDSConnection,
 });
