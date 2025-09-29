@@ -39,7 +39,7 @@ type FetchNewWithIDType = 'journal' | 'submission';
 interface ESBulkOperation<I extends string> {
     update: {
         _id: string;
-        _index: `fa_${I}s`;
+        _index: `fadumper_${I}s`;
         retry_on_conflict: number;
     };
 }
@@ -64,7 +64,7 @@ async function getMaxID(faType: FetchNewWithIDType) {
 
     if (maxId <= 0) {
         const maxIdRes = await client.search({
-            index: `fa_${faType}s`,
+            index: `fadumper_${faType}s`,
             body: {
                 aggregations: {
                     max_id: {
@@ -202,7 +202,7 @@ async function loopType(faType: FetchNewWithIDType) {
                 {
                     update: {
                         _id: doc.id.toString(10),
-                        _index: `fa_${faType}s`,
+                        _index: `fadumper_${faType}s`,
                         retry_on_conflict: 3,
                     },
                 },

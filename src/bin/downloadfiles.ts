@@ -321,7 +321,7 @@ async function main() {
     feedWatchdog();
 
     let response = await client.search({
-        index: `fa_${ARGS.type}s`,
+        index: `fadumper_${ARGS.type}s`,
         scroll: '60s',
         size: OS_BATCH_SIZE,
         body: {

@@ -14,50 +14,50 @@ if [ -z "${NEWVER}" ]; then
 	exit 1
 fi
 
-curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fa_submissions_${NEWVER}" --data @fa_submissions.json
-curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fa_users_${NEWVER}" --data @fa_users.json
-curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fa_journals_${NEWVER}" --data @fa_journals.json
+curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fadumper_submissions_${NEWVER}" --data @fadumper_submissions.json
+curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fadumper_users_${NEWVER}" --data @fadumper_users.json
+curl -f -v -XPUT -H 'Content-Type: application/json' "http://opensearch:9200/fadumper_journals_${NEWVER}" --data @fadumper_journals.json
 
 curl -f -v -XPOST 'http://opensearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
   \"source\": {
-    \"index\": \"fa_submissions_${OLDVER}\"
+    \"index\": \"fadumper_submissions_${OLDVER}\"
   },
   \"dest\": {
-    \"index\": \"fa_submissions_${NEWVER}\"
+    \"index\": \"fadumper_submissions_${NEWVER}\"
   }
 }"
 
 
 curl -f -v -XPOST 'http://opensearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
   \"source\": {
-    \"index\": \"fa_users_${OLDVER}\"
+    \"index\": \"fadumper_users_${OLDVER}\"
   },
   \"dest\": {
-    \"index\": \"fa_users_${NEWVER}\"
+    \"index\": \"fadumper_users_${NEWVER}\"
   }
 }"
 
 curl -f -v -XPOST 'http://opensearch:9200/_reindex' -H 'Content-Type: application/json' --data-raw "{
   \"source\": {
-    \"index\": \"fa_journals_${OLDVER}\"
+    \"index\": \"fadumper_journals_${OLDVER}\"
   },
   \"dest\": {
-    \"index\": \"fa_journals_${NEWVER}\"
+    \"index\": \"fadumper_journals_${NEWVER}\"
   }
 }"
 
 curl -f -v -XPOST 'http://opensearch:9200/_aliases' -H 'Content-Type: application/json' --data-raw "{
     \"actions\" : [
-        { \"add\": { \"index\": \"fa_journals_${NEWVER}\", \"alias\": \"fa_journals\" } },
-        { \"add\": { \"index\": \"fa_users_${NEWVER}\", \"alias\": \"fa_users\" } },
-        { \"add\": { \"index\": \"fa_submissions_${NEWVER}\", \"alias\": \"fa_submissions\" } },
-        { \"remove\": { \"index\": \"fa_journals_${OLDVER}\", \"alias\": \"fa_journals\" } },
-        { \"remove\": { \"index\": \"fa_users_${OLDVER}\", \"alias\": \"fa_users\" } },
-        { \"remove\": { \"index\": \"fa_submissions_${OLDVER}\", \"alias\": \"fa_submissions\" } }
+        { \"add\": { \"index\": \"fadumper_journals_${NEWVER}\", \"alias\": \"fadumper_journals\" } },
+        { \"add\": { \"index\": \"fadumper_users_${NEWVER}\", \"alias\": \"fadumper_users\" } },
+        { \"add\": { \"index\": \"fadumper_submissions_${NEWVER}\", \"alias\": \"fadumper_submissions\" } },
+        { \"remove\": { \"index\": \"fadumper_journals_${OLDVER}\", \"alias\": \"fadumper_journals\" } },
+        { \"remove\": { \"index\": \"fadumper_users_${OLDVER}\", \"alias\": \"fadumper_users\" } },
+        { \"remove\": { \"index\": \"fadumper_submissions_${OLDVER}\", \"alias\": \"fadumper_submissions\" } }
     ]
 }"
 
 echo 'Run the following commands to delete the old indices:'
-echo "curl -XDELETE 'http://opensearch:9200/fa_journals_${OLDVER}'"
-echo "curl -XDELETE 'http://opensearch:9200/fa_users_${OLDVER}'"
-echo "curl -XDELETE 'http://opensearch:9200/fa_submissions_${OLDVER}'"
+echo "curl -XDELETE 'http://opensearch:9200/fadumper_journals_${OLDVER}'"
+echo "curl -XDELETE 'http://opensearch:9200/fadumper_users_${OLDVER}'"
+echo "curl -XDELETE 'http://opensearch:9200/fadumper_submissions_${OLDVER}'"

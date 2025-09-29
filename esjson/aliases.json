@@ -1,7 +1,7 @@
 {
     "actions": [
-        { "add": { "index": "fa_submissions_1", "alias": "fa_submissions" } },
-        { "add": { "index": "fa_users_1", "alias": "fa_users" } },
-        { "add": { "index": "fa_journals_1", "alias": "fa_journals" } }
+        { "add": { "index": "fadumper_submissions_1", "alias": "fadumper_submissions" } },
+        { "add": { "index": "fadumper_users_1", "alias": "fadumper_users" } },
+        { "add": { "index": "fadumper_journals_1", "alias": "fadumper_journals" } }
     ]
 }
