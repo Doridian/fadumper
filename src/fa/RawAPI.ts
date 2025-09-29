@@ -188,6 +188,7 @@ export class RawAPI {
                         msg.includes(
                             'the page you are trying to reach is currently pending deletion by a request from',
                         ) ||
+                        msg.includes('access has been disabled to the account and contents of user') ||
                         msg.includes('has voluntarily disabled access to their account and all of its contents')
                     ) {
                         throw new HttpError(404, url);
