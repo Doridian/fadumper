@@ -67,7 +67,7 @@ async function processSearch(
     }
 
     const res = await client.search({
-        index: `fa_${faType}s`,
+        index: `fadumper_${faType}s`,
         size,
         from,
         body: {
