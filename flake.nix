@@ -14,7 +14,7 @@
             pname = "fadumper";
             version = "1.0.0";
             src = ./.;
-            npmDepsHash = "sha256-SXkouJDyiviahRON+h3b3CotNB7xM1cWaB7Y0vPRNR8=";
+            npmDepsHash = "sha256-r6Xf2Bjsx9zYge9Vw3vufkK41f5F7GMLc1/x6NpL6QE=";
           };
         };
       });
