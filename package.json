@@ -10,7 +10,7 @@
     "build": "rimraf dist && tsc --project ."
   },
   "type": "module",
-  "author": "",
+  "author": "Doridian",
   "license": "MIT",
   "dependencies": {
     "@doridian/single-instance": "^0.0.5",
