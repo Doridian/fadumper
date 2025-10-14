@@ -15,7 +15,7 @@ services:
             interval: 60s
             timeout: 10s
     opensearch:
-        image: opensearchproject/opensearch:3.2.0
+        image: opensearchproject/opensearch:3.3.0
         restart: always
         ports:
             - 9200:9200
