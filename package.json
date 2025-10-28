@@ -30,7 +30,7 @@
     "@types/argparse": "^2.0.16",
     "@types/cheerio": "^1.0.0",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-import-resolver-typescript": "^4.0.0",
