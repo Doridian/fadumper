@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 curl -v -XPOST -H 'Content-Type: application/json' 'http://opensearch:9200/fadumper_submissions/_update_by_query?conflicts=proceed' --data-raw '{
     "query": {
         "bool": {
